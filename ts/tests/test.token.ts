@@ -1,0 +1,80 @@
+import { web3, Provider } from "@project-serum/anchor"
+import assert from 'assert';
+import { NodeWallet } from "@metaplex/js";
+import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { addMetadata, createToken, getMetadata } from "../src"
+const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL } = web3;
+
+
+describe('spl token', () => {
+
+    let wallet;
+    let connection;
+    const initialSupply = 1_000_000;
+    const name = "TestToken";
+    const symbol = "TKNSYMBL";
+    const decimals = 9
+
+    before(async () => {
+        const walletKeyPair = Keypair.generate();
+        connection = new Connection(clusterApiUrl("devnet"))
+        wallet = new NodeWallet(walletKeyPair)
+        await connection.confirmTransaction(await connection.requestAirdrop(wallet.publicKey, LAMPORTS_PER_SOL))
+    })
+
+
+    it('should create a new spl token with metadata', async () => {
+
+        const { tx, tokenMint } = await createToken({
+            initialSupply,
+            tokenData: { name, symbol, decimals },
+            connection,
+            wallet
+        })
+
+        await connection.confirmTransaction(tx)
+        const data = await getMetadata({ tokenMint: tokenMint.publicKey, connection })
+        assert.strictEqual(data.name, name);
+        assert.strictEqual(data.symbol, symbol);
+
+    })
+
+    it('should add metadata to an existing fungible token mint', async () => {
+
+        const { payer } = wallet;
+
+        const tokenMint = await Token.createMint(
+            connection,
+            payer,
+            payer.publicKey,
+            null,
+            9,
+            TOKEN_PROGRAM_ID
+        );
+
+        const tokenAccount = await tokenMint.createAssociatedTokenAccount(wallet.publicKey);
+
+
+        await tokenMint.mintTo(
+            tokenAccount,
+            wallet.publicKey,
+            [],
+            initialSupply
+        )
+
+
+        const tx = await addMetadata({
+            tokenMint,
+            tokenData: { name, symbol, decimals },
+            connection,
+            wallet
+        })
+
+        await connection.confirmTransaction(tx)
+        const data = await getMetadata({ tokenMint: tokenMint.publicKey, connection })
+        assert.strictEqual(data.name, name);
+        assert.strictEqual(data.symbol, symbol);
+
+    })
+
+})
