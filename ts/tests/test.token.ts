@@ -1,4 +1,4 @@
-import { web3, Provider } from "@project-serum/anchor"
+import { web3, BN } from "@project-serum/anchor"
 import assert from 'assert';
 import { NodeWallet } from "@metaplex/js";
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -10,7 +10,7 @@ describe('spl token', () => {
 
     let wallet;
     let connection;
-    const initialSupply = 1_000_000;
+    const initialSupply = new BN(1_000_000);
     const name = "TestToken";
     const symbol = "TKNSYMBL";
     const decimals = 9

@@ -3,10 +3,10 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, BN } from '@project-serum/anchor';
 import { NodeWallet } from '@metaplex/js';
 import { config } from "../../../config";
-const { pda: { canonicalMintAuthoritySeed, tokenAccountSeed } } = config;
+const { pda: { CANONICAL_MINT_AUTHORITY_PDA_SEED, TOKEN_ACCOUNT_PDA_SEED } } = config;
 
-interface swapParams {
-    swapProgram: Program;
+interface swapWrappedForCanonicalParams {
+    canSwap: Program;
     canonicalMint: web3.PublicKey;
     wrappedMint: web3.PublicKey;
     canonicalData: web3.PublicKey;
@@ -17,8 +17,8 @@ interface swapParams {
     wallet: NodeWallet
 }
 
-export const swap = async ({
-    swapProgram,
+export const swapWrappedForCanonical = async ({
+    canSwap,
     canonicalMint,
     wrappedMint,
     canonicalData,
@@ -27,22 +27,22 @@ export const swap = async ({
     destinationTokenAccount,
     destinationAmount,
     wallet
-} = {} as swapParams) => {
+} = {} as swapWrappedForCanonicalParams) => {
 
     const { payer } = wallet;
 
     const [expectedMintAuthorityPDA, expectedMintAuthorityBump] =
         await web3.PublicKey.findProgramAddress(
-            [canonicalMintAuthoritySeed, canonicalMint.toBuffer()],
-            swapProgram.programId
+            [CANONICAL_MINT_AUTHORITY_PDA_SEED, canonicalMint.toBuffer()],
+            canSwap.programId
         );
 
     const [wrappedTokenAccount] = await web3.PublicKey.findProgramAddress(
-        [tokenAccountSeed, canonicalMint.toBuffer(), wrappedMint.toBuffer()],
-        swapProgram.programId
+        [TOKEN_ACCOUNT_PDA_SEED, canonicalMint.toBuffer(), wrappedMint.toBuffer()],
+        canSwap.programId
     );
 
-    return swapProgram.rpc.swapWrappedForCanonical(
+    return canSwap.rpc.swapWrappedForCanonical(
         destinationAmount,
         expectedMintAuthorityBump,
         {

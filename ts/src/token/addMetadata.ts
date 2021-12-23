@@ -2,7 +2,7 @@ import { Token } from '@solana/spl-token';
 import { actions, NodeWallet } from '@metaplex/js';
 const { createMetadata } = actions;
 import { MetadataDataData } from '@metaplex-foundation/mpl-token-metadata';
-import { TokenData } from '../../types';
+import { TokenData } from '../types';
 
 
 interface addMetadataParams {

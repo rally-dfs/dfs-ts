@@ -1,2 +1,7 @@
+import { initializeCanonicalToken } from './initializeCanonicalToken';
+
 export * from './canonicalSwapProgram';
-export * from './swap';
+export * from './swapWrappedForCanonical';
+export * from './initializeWrappedToken';
+export * from './initializeCanonicalToken';
+export * from './swapCanonicalForWrapped';

@@ -21,6 +21,10 @@ export const loadKeypair = (keypair) => {
 
 export const getProvider = (walletKeyPair, cluster) => {
 
-    return new Provider(new Connection(clusterApiUrl(cluster)), new NodeWallet(walletKeyPair), {})
+    const wallet = new NodeWallet(loadKeypair(walletKeyPair))
+    const connection = new Connection(clusterApiUrl(cluster));
+    const provider = new Provider(connection, wallet, {});
+
+    return { provider, connection, wallet }
 
 }

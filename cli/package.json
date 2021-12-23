@@ -2,8 +2,14 @@
   "name": "dfs-cli",
   "version": "1.0.0",
   "description": "",
+  "bin": {
+    "dfs-cli": "./build/cli/src/dfs-cli.js"
+  },
   "keywords": [],
   "author": "",
+  "scripts": {
+    "build": "tsc -p ./src"
+  },
   "license": "ISC",
   "dependencies": {
     "@metaplex/js": "^4.10.1",

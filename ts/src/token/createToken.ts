@@ -1,12 +1,14 @@
-import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Token, TOKEN_PROGRAM_ID, u64 } from '@solana/spl-token';
 import { actions, NodeWallet } from '@metaplex/js';
 const { createMetadata } = actions;
 import { MetadataDataData } from '@metaplex-foundation/mpl-token-metadata';
-import { TokenData } from '../../types';
+import { TokenData } from '../types';
+import { BN } from "@project-serum/anchor";
+
 
 
 interface createTokenParams {
-    initialSupply: number;
+    initialSupply: BN;
     tokenData: TokenData;
     connection: any;
     wallet: NodeWallet;
@@ -36,14 +38,17 @@ export const createToken = async ({ initialSupply, tokenData, connection, wallet
     const tokenAccount = await tokenMint.createAssociatedTokenAccount(wallet.publicKey);
 
 
+
     // send initial supply to token account
 
     await tokenMint.mintTo(
         tokenAccount,
         wallet.publicKey,
         [],
-        initialSupply
+        new u64(initialSupply.toString())
     )
+
+
 
 
     // create metadata obj
