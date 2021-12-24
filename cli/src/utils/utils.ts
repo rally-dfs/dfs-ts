@@ -28,3 +28,10 @@ export const getProvider = (walletKeyPair, cluster) => {
     return { provider, connection, wallet }
 
 }
+
+export const getOrCreateAssociatedAccount = async (token, pubKey) => {
+
+    const accountInfo = await token.getOrCreateAssociatedAccountInfo(pubKey);
+    return accountInfo.address;
+
+}

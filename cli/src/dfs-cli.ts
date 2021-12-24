@@ -14,7 +14,7 @@ import {
     swapWrappedForCanonical,
     swapCanonicalForWrapped
 } from "../../ts/src"
-import { loadKeypair, getProvider } from "./utils/utils"
+import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
 const { Connection, clusterApiUrl, Keypair, PublicKey } = web3;
 
 const canonicalMint = new PublicKey(
@@ -179,8 +179,6 @@ program
         const associatedTokenAcct = await canv1.getOrCreateAssociatedAccountInfo(wallet.publicKey);
         const { amount } = await canv1.getAccountInfo(associatedTokenAcct.address);
 
-        console.log(amount.toNumber())
-
         console.log(`balance = ${amount.div(ten.pow(new BN(decimals))).toNumber()} in ${associatedTokenAcct.address}`);
 
     });
@@ -202,6 +200,8 @@ program
         const { decimals } = await whv2.getMintInfo()
         const associatedTokenAcct = await whv2.getOrCreateAssociatedAccountInfo(wallet.publicKey);
         const { amount } = await whv2.getAccountInfo(associatedTokenAcct.address);
+
+
         console.log(`balance = ${amount.div(ten.pow(new BN(decimals))).toNumber()} in ${associatedTokenAcct.address}`);
 
     });
@@ -215,11 +215,11 @@ program
     )
     .option(
         '-w, --wormhole_token_account <string>',
-        'destination account',
+        'destination account (if not included uses associated token acct)',
     )
     .option(
         '-c, --canonical_token_account <string>',
-        'destination account',
+        'destination account (if not included uses associated token acct)',
     )
     .requiredOption(
         '-k, --keypair <path>',
@@ -238,19 +238,28 @@ program
 
         const ten = new BN(10)
         decimals = new BN(decimals)
-        amount = new BN(amount)
+        let destAmount = new BN(amount)
 
         //convert to decimal units
-        amount = amount.mul(ten.pow(decimals))
-
-        //decimals of destination-
+        destAmount = destAmount.mul(ten.pow(decimals))
 
         const wormholeToken = new Token(connection, wormholeMint, TOKEN_PROGRAM_ID, wallet.payer)
         const canonicalToken = new Token(connection, canonicalMint, TOKEN_PROGRAM_ID, wallet.payer)
 
-        const wormholeTokenAccount = wormhole_token_account ? new PublicKey(wormhole_token_account) : await wormholeToken.createAssociatedTokenAccount(wallet.payer.publicKey);
-        const canonicalTokenAccount = canonical_token_account ? new PublicKey(canonical_token_account) : await canonicalToken.createAssociatedTokenAccount(wallet.payer.publicKey);
+        const { decimals: canDec } = await canonicalToken.getMintInfo()
 
+        const wormholeTokenAccount = wormhole_token_account ? new PublicKey(wormhole_token_account) : await getOrCreateAssociatedAccount(wormholeToken, wallet.payer.publicKey);
+        const canonicalTokenAccount = canonical_token_account ? new PublicKey(canonical_token_account) : await getOrCreateAssociatedAccount(canonicalToken, wallet.payer.publicKey);
+
+        let { amount: canBalance } = await canonicalToken.getAccountInfo(canonicalTokenAccount);
+
+        const balance = canBalance.div(ten.pow(new BN(canDec))).toNumber();
+
+        if (balance < Number(amount)) {
+
+            return console.log(`insufficent funds, your canonical $RLY balance is currently ${balance}`)
+
+        }
 
         const tx = await swapCanonicalForWrapped({
             canSwap,
@@ -260,13 +269,13 @@ program
             wrappedData: wormholeData,
             sourceTokenAccount: canonicalTokenAccount,
             destinationTokenAccount: wormholeTokenAccount,
-            destinationAmount: amount,
+            destinationAmount: destAmount,
             wallet
         })
 
         await connection.confirmTransaction(tx)
 
-        console.log(`${amount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
+        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
 
     });
 
@@ -279,11 +288,11 @@ program
     )
     .option(
         '-w, --wormhole_token_account <string>',
-        'destination account',
+        'destination account (if not included uses associated token acct)',
     )
     .option(
         '-c, --canonical_token_account <string>',
-        'destination account',
+        'destination account (if not included uses associated token acct)',
     )
     .requiredOption(
         '-k, --keypair <path>',
@@ -302,19 +311,29 @@ program
 
         const ten = new BN(10)
         decimals = new BN(decimals)
-        amount = new BN(amount)
+        let destAmount = new BN(amount)
 
         //convert to decimal units
-        amount = amount.mul(ten.pow(decimals))
+        destAmount = destAmount.mul(ten.pow(decimals))
 
         //decimals of destination-
 
         const wormholeToken = new Token(connection, wormholeMint, TOKEN_PROGRAM_ID, wallet.payer)
         const canonicalToken = new Token(connection, canonicalMint, TOKEN_PROGRAM_ID, wallet.payer)
 
-        const wormholeTokenAccount = wormhole_token_account ? new PublicKey(wormhole_token_account) : await wormholeToken.createAssociatedTokenAccount(wallet.payer.publicKey);
-        const canonicalTokenAccount = canonical_token_account ? new PublicKey(canonical_token_account) : await canonicalToken.createAssociatedTokenAccount(wallet.payer.publicKey);
+        const { decimals: wormDec } = await wormholeToken.getMintInfo()
 
+        const wormholeTokenAccount = wormhole_token_account ? new PublicKey(wormhole_token_account) : await getOrCreateAssociatedAccount(wormholeToken, wallet.payer.publicKey);
+        const canonicalTokenAccount = canonical_token_account ? new PublicKey(canonical_token_account) : await getOrCreateAssociatedAccount(canonicalToken, wallet.payer.publicKey);
+
+
+        let { amount: wormBalance } = await canonicalToken.getAccountInfo(canonicalTokenAccount);
+
+        const balance = wormBalance.div(ten.pow(new BN(wormDec))).toNumber();
+
+        if (balance < Number(amount)) {
+            return console.log(`insufficent funds, your wormhole $RLY balance is currently ${balance}`)
+        }
 
         const tx = await swapWrappedForCanonical({
             canSwap,
@@ -324,13 +343,13 @@ program
             wrappedData: wormholeData,
             sourceTokenAccount: wormholeTokenAccount,
             destinationTokenAccount: canonicalTokenAccount,
-            destinationAmount: amount,
+            destinationAmount: destAmount,
             wallet
         })
 
         await connection.confirmTransaction(tx)
 
-        console.log(`${amount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
+        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
 
     });
 
