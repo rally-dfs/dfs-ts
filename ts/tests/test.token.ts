@@ -6,7 +6,7 @@ import { addMetadata, createToken, getMetadata } from "../src"
 const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL } = web3;
 
 
-/*describe('spl token', () => {
+describe('spl token', () => {
 
     let wallet;
     let connection;
@@ -77,4 +77,4 @@ const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL } = web3;
 
     })
 
-})*/
+})

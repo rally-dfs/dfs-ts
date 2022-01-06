@@ -13,7 +13,7 @@ const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
 
 
 
-/*describe('canonical swap', () => {
+describe('canonical swap', () => {
 
     let provider;
     let wallet;
@@ -108,4 +108,4 @@ const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
 
 
 
-}) */
+}) 

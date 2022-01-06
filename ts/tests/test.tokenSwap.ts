@@ -1,12 +1,12 @@
 import {
     tokenSwapProgram,
-    createToken
 } from "../src"
 import { web3, Provider, BN } from "@project-serum/anchor"
 import assert from 'assert';
 import { NodeWallet } from "@metaplex/js";
 import { initializeLinearPriceCurve } from "../src/programs/token-swap/initializeLinearPriceCurve";
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { executeSwap } from "../src/programs/token-swap/executeSwap";
 const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
 
 describe('token swap', () => {
@@ -21,12 +21,14 @@ describe('token swap', () => {
     let slopeDenominator;
     let initialTokenPriceA;
     let initialTokenPriceB;
-    const initialTokenSupplyA = new BN(500 * 10 ** 8);
+    let poolToken;
+    let feeAccount;
+    let destinationAccount;
+    let tokenATokenAccount;
+    let tokenBTokenAccount;
     const initialTokenBSupply = new BN(500 * 10 ** 8);
-    const tokenAName = "tokenA";
-    const tokenASymbol = "TKNA";
-    const tokenBName = "tokenB";
-    const tokenBSymbol = "TKNB";
+    const initialTokenASupply = new BN(10000 * 10 ** 8);
+    const swapInitAmountTokenA = new BN(2400 * 10 ** 8);
     const decimals = 8
 
     before(async () => {
@@ -64,7 +66,7 @@ describe('token swap', () => {
             TOKEN_PROGRAM_ID
         );
 
-        const tokenB = await Token.createMint(
+        tokenB = await Token.createMint(
             connection,
             payer,
             payer.publicKey,
@@ -73,27 +75,68 @@ describe('token swap', () => {
             TOKEN_PROGRAM_ID
         );
 
+
+        // mint token B to associated token account for caller, this will be transferred to pda token account 
+
+        const callerTokenBAccount = await tokenB.createAssociatedTokenAccount(payer.publicKey);
+        await tokenB.mintTo(callerTokenBAccount, payer, [], initialTokenBSupply.toNumber());
+
         const tokenSwap = await tokenSwapProgram(provider);
 
-        const { poolToken, feeAccount, destinationAccount } = await initializeLinearPriceCurve({
+        ({
+            poolToken,
+            feeAccount,
+            destinationAccount,
+            tokenATokenAccount,
+            tokenBTokenAccount
+
+        } = await initializeLinearPriceCurve({
             tokenSwap,
             slopeNumerator,
             slopeDenominator,
             initialTokenPriceA,
             initialTokenPriceB,
+            callerTokenBAccount,
             tokenSwapInfo,
             tokenA,
             tokenB,
             wallet,
             provider,
             initialTokenBSupply
-        })
+        }))
 
         const { amount: feeAmount } = await poolToken.getAccountInfo(feeAccount);
         const { amount: destinationAmount } = await poolToken.getAccountInfo(destinationAccount)
 
         assert.ok(feeAmount.eq(new BN(0)));
         assert.ok(destinationAmount.eq(new BN(10 * 10 ** 8)));
+
+    })
+
+    it('it should execute a swap on a linear price curve', async () => {
+
+        const tokenSwap = await tokenSwapProgram(provider);
+        const amountOut = new BN(0)
+        const { payer } = wallet
+
+        const callerTokenAAccount = await tokenA.createAccount(payer.publicKey);
+        await tokenA.mintTo(callerTokenAAccount, payer, [], initialTokenASupply.toNumber());
+        const callerTokenBAccount = await tokenB.createAccount(payer.publicKey);
+
+        await executeSwap({
+            tokenSwap,
+            tokenSwapInfo,
+            amountIn: swapInitAmountTokenA,
+            amountOut,
+            userTransferAuthority: payer.publicKey,
+            userSourceTokenAccount: callerTokenAAccount,
+            userDestinationTokenAccount: callerTokenBAccount,
+            swapSourceTokenAccount: tokenATokenAccount,
+            swapDestinationTokenAccount: tokenBTokenAccount,
+            poolMintAccount: poolToken.publicKey,
+            poolFeeAccount: feeAccount,
+            wallet
+        })
 
     })
 

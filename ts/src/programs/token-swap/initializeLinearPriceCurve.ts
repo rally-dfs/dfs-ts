@@ -2,7 +2,7 @@ import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, BN } from '@project-serum/anchor';
 import { config } from "../../../config";
 import { NodeWallet } from '@metaplex/js';
-import { createSwapInfoAccount } from '../../utils/utils';
+import { AnyPublicKey } from '@metaplex-foundation/mpl-core';
 
 const { accountLayout: { SWAP_ACCOUNT_SPACE } } = config;
 
@@ -14,6 +14,7 @@ interface initializeLinearPriceCurveParams {
     slopeDenominator: BN;
     initialTokenPriceA: BN;
     initialTokenPriceB: BN;
+    callerTokenBAccount: web3.PublicKey;
     tokenSwapInfo: any;
     tokenA: Token;
     tokenB: Token;
@@ -28,6 +29,7 @@ export const initializeLinearPriceCurve = async ({
     slopeDenominator,
     initialTokenPriceA,
     initialTokenPriceB,
+    callerTokenBAccount,
     tokenSwapInfo,
     tokenA,
     tokenB,
@@ -64,9 +66,8 @@ export const initializeLinearPriceCurve = async ({
 
     const tokenBTokenAccount = await tokenB.createAccount(expectedSwapAuthorityPDA);
 
-    // TODO: this shouldn't necessarily be mintTo in most cases this will be transfer
-
-    await tokenB.mintTo(tokenBTokenAccount, payer, [], initialTokenBSupply.toNumber());
+    // transfer tokens from caller to pda owned token account
+    await tokenB.transfer(callerTokenBAccount, tokenBTokenAccount, payer, [], initialTokenBSupply.toNumber())
 
     // create token accounts for fees and pool tokens owned by calling account (can't use associated token account as two accounts req'd)
 
@@ -105,6 +106,13 @@ export const initializeLinearPriceCurve = async ({
         }
     );
 
-    return { tx, poolToken, feeAccount, destinationAccount }
+    return {
+        tx,
+        poolToken,
+        feeAccount,
+        destinationAccount,
+        tokenATokenAccount,
+        tokenBTokenAccount
+    }
 
 }
