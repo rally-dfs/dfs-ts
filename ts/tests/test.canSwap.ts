@@ -12,9 +12,8 @@ import { NodeWallet } from "@metaplex/js";
 const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
 
 
-// TODO implement swap tests
 
-describe('canonical swap', () => {
+/*describe('canonical swap', () => {
 
     let provider;
     let wallet;
@@ -109,4 +108,4 @@ describe('canonical swap', () => {
 
 
 
-})
+}) */

@@ -1,7 +1,7 @@
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, } from '@project-serum/anchor';
 import { config } from "../../../config";
-const { pda: { CANONICAL_MINT_AUTHORITY_PDA_SEED } } = config;
+const { pda: { CANONICAL_MINT_AUTHORITY_PDA_SEED }, accountLayout: { CANONICAL_DATA_SPACE } } = config;
 const { PublicKey, SystemProgram: { programId } } = web3;
 
 
@@ -40,7 +40,7 @@ export const initializeCanonicalToken = async ({
                 instructions: [
                     await canSwap.account.canonicalData.createInstruction(
                         canonicalData,
-                        8 + 65
+                        CANONICAL_DATA_SPACE
                     ),
                 ],
                 signers: [canonicalData, canonicalAuthority],

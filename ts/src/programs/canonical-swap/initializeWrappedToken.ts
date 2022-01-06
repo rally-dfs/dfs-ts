@@ -1,7 +1,11 @@
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { AccountLayout, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, } from '@project-serum/anchor';
 import { config } from "../../../config";
-const { pda: { WRAPPED_TOKEN_OWNER_AUTHORITY_PDA_SEED, TOKEN_ACCOUNT_PDA_SEED } } = config;
+const {
+    pda: { WRAPPED_TOKEN_OWNER_AUTHORITY_PDA_SEED, TOKEN_ACCOUNT_PDA_SEED },
+    accountLayout: { WRAPPED_DATA_SPACE }
+
+} = config;
 const { PublicKey, SystemProgram: { programId } } = web3;
 
 interface initializeWrappedTokenParams {
@@ -56,7 +60,7 @@ export const initializeWrappedToken = async ({
             instructions: [
                 await canSwap.account.wrappedData.createInstruction(
                     wrappedData,
-                    8 + 66
+                    WRAPPED_DATA_SPACE
                 ),
             ],
             signers: [wrappedData, canonicalAuthority],

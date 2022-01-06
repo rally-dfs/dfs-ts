@@ -15,7 +15,7 @@ import {
     swapCanonicalForWrapped
 } from "../../ts/src"
 import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
-const { Connection, clusterApiUrl, Keypair, PublicKey } = web3;
+const { Connection, clusterApiUrl, PublicKey } = web3;
 
 const canonicalMint = new PublicKey(
     "RLYv2ubRMDLcGG2UyvPmnPmkfuQTsMbg4Jtygc7dmnq"
@@ -273,6 +273,8 @@ program
             wallet
         })
 
+        console.log(tx)
+
         await connection.confirmTransaction(tx)
 
         console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
@@ -347,9 +349,11 @@ program
             wallet
         })
 
+        console.log(tx)
+
         await connection.confirmTransaction(tx)
 
-        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
+        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${wormholeMint} swapped for ${canonicalMint} sent to ${canonicalTokenAccount.toBase58()}`)
 
     });
 
