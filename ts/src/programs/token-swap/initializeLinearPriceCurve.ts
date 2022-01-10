@@ -20,7 +20,7 @@ interface initializeLinearPriceCurveParams {
     tokenB: Token;
     wallet: NodeWallet;
     provider: any;
-    initialTokenBSupply: BN;
+    initialTokenBLiquidity: BN;
 }
 
 export const initializeLinearPriceCurve = async ({
@@ -35,7 +35,7 @@ export const initializeLinearPriceCurve = async ({
     tokenB,
     wallet,
     provider,
-    initialTokenBSupply
+    initialTokenBLiquidity
 
 } = {} as initializeLinearPriceCurveParams) => {
 
@@ -67,7 +67,7 @@ export const initializeLinearPriceCurve = async ({
     const tokenBTokenAccount = await tokenB.createAccount(expectedSwapAuthorityPDA);
 
     // transfer tokens from caller to pda owned token account
-    await tokenB.transfer(callerTokenBAccount, tokenBTokenAccount, payer, [], initialTokenBSupply.toNumber())
+    await tokenB.transfer(callerTokenBAccount, tokenBTokenAccount, payer, [], initialTokenBLiquidity.toNumber())
 
     // create token accounts for fees and pool tokens owned by calling account (can't use associated token account as two accounts req'd)
 

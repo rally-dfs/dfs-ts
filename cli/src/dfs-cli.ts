@@ -12,10 +12,13 @@ import {
     getMetadata,
     getMintInfo,
     swapWrappedForCanonical,
-    swapCanonicalForWrapped
+    swapCanonicalForWrapped,
+    initializeLinearPriceCurve,
+    executeSwap,
+    tokenSwapProgram,
 } from "../../ts/src"
 import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
-const { Connection, clusterApiUrl, PublicKey } = web3;
+const { Connection, clusterApiUrl, PublicKey, Keypair } = web3;
 
 const canonicalMint = new PublicKey(
     "RLYv2ubRMDLcGG2UyvPmnPmkfuQTsMbg4Jtygc7dmnq"
@@ -303,7 +306,7 @@ program
     )
     .action(async options => {
 
-        const { env, keypair, wormhole_token_account, canonical_token_account } = options;
+        const { keypair, wormhole_token_account, canonical_token_account } = options;
         let { amount } = options;
         const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
         const canSwap = await canonicalSwapProgram(provider);
@@ -362,14 +365,82 @@ program
 
 program
     .command('init-tbc')
+    .argument('<token_a>', 'token A')
+    .argument('<token_b>', 'token B')
+    .argument('<token_b_liquidity', 'token B liquidity')
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
         '--keypair not provided',
     )
-    .action(async options => {
+    .requiredOption(
+        '--slope_numerator <string>',
+        'slope numerator',
+    )
+    .requiredOption(
+        '--slope_denominator <string>',
+        'slope denominator',
+    )
+    .requiredOption(
+        '--init_price_a <string>',
+        'initial price token A',
+    )
+    .requiredOption(
+        '--init_price_b <string>',
+        'initial price token B',
+    )
+    .action(async (token_a, token_b, token_b_liquidity, options) => {
 
-        console.log("coming soon!")
+        const { env, keypair, slope_numerator, slope_denominator, init_price_a, init_price_b } = options;
+
+
+        const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const tokenSwap = await tokenSwapProgram(provider);
+
+        const slopeDenominator = new BN(slope_denominator);
+        const slopeNumerator = new BN(slope_numerator);
+        const initialTokenPriceA = new BN(init_price_a);
+        const initialTokenPriceB = new BN(init_price_b);
+        const initialTokenBLiquidity = new BN(token_b_liquidity);
+
+        const tokenSwapInfo = Keypair.generate();
+
+        const tokenA = new Token(connection, token_a, TOKEN_PROGRAM_ID, keypair);
+        const tokenB = new Token(connection, token_b, TOKEN_PROGRAM_ID, keypair);
+
+        const callerTokenBAccount = await getOrCreateAssociatedAccount(token_b, wallet.payer.publicKey);
+
+
+        const {
+            poolToken,
+            feeAccount,
+            destinationAccount,
+            tokenATokenAccount,
+            tokenBTokenAccount
+
+        } = await initializeLinearPriceCurve({
+            tokenSwap,
+            slopeNumerator,
+            slopeDenominator,
+            initialTokenPriceA,
+            initialTokenPriceB,
+            callerTokenBAccount,
+            tokenSwapInfo,
+            tokenA,
+            tokenB,
+            wallet,
+            provider,
+            initialTokenBLiquidity
+        })
+
+
+        console.log('new pool public key', tokenSwapInfo.publicKey);
+        console.log('pool token public key', poolToken.publicKey);
+        console.log('fee account public key', feeAccount);
+        console.log('initial pool token deposit token account', destinationAccount);
+        console.log('swap token account A', tokenATokenAccount);
+        console.log('swap token account B', tokenBTokenAccount);
+
 
     });
 
