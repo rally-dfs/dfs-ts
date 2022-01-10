@@ -364,7 +364,7 @@ program
 
 
 program
-    .command('init-tbc')
+    .command('tbc-init')
     .argument('<token_a>', 'token A')
     .argument('<token_b>', 'token B')
     .argument('<token_b_liquidity', 'token B liquidity')
@@ -395,6 +395,7 @@ program
 
 
         const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { payer } = wallet
         const tokenSwap = await tokenSwapProgram(provider);
 
         const slopeDenominator = new BN(slope_denominator);
@@ -405,10 +406,10 @@ program
 
         const tokenSwapInfo = Keypair.generate();
 
-        const tokenA = new Token(connection, token_a, TOKEN_PROGRAM_ID, keypair);
-        const tokenB = new Token(connection, token_b, TOKEN_PROGRAM_ID, keypair);
+        const tokenA = new Token(connection, token_a, TOKEN_PROGRAM_ID, payer);
+        const tokenB = new Token(connection, token_b, TOKEN_PROGRAM_ID, payer);
 
-        const callerTokenBAccount = await getOrCreateAssociatedAccount(token_b, wallet.payer.publicKey);
+        const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
 
 
         const {
@@ -433,7 +434,6 @@ program
             initialTokenBLiquidity
         })
 
-
         console.log('new pool public key', tokenSwapInfo.publicKey);
         console.log('pool token public key', poolToken.publicKey);
         console.log('fee account public key', feeAccount);
@@ -441,6 +441,82 @@ program
         console.log('swap token account A', tokenATokenAccount);
         console.log('swap token account B', tokenBTokenAccount);
 
+    });
+
+
+program
+    .command('tbc-swap')
+    .argument('<token_a>', 'token A')
+    .argument('<token_b>', 'token B')
+    .argument('<amount', 'amount of token a to swap')
+    .requiredOption(
+        '-k, --keypair <path>',
+        `Solana wallet location`,
+        '--keypair not provided',
+    )
+    .requiredOption(
+        '--slope_denominator <string>',
+        'slope denominator',
+    )
+    .requiredOption(
+        '--init_price_a <string>',
+        'initial price token A',
+    )
+    .requiredOption(
+        '--init_price_b <string>',
+        'initial price token B',
+    )
+    .action(async (token_a, token_b, amount, options) => {
+
+        const { env, keypair, slope_numerator, slope_denominator, init_price_a, init_price_b } = options;
+
+
+        const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { payer } = wallet;
+        const tokenSwap = await tokenSwapProgram(provider);
+
+        const tokenAAmount = new BN(amount);
+        const amountOut = new BN(0)
+
+
+        const tokenSwapInfo = Keypair.generate();
+
+        const tokenA = new Token(connection, token_a, TOKEN_PROGRAM_ID, keypair);
+        const tokenB = new Token(connection, token_b, TOKEN_PROGRAM_ID, keypair);
+        const [SwapAuthorityPDA] =
+            await PublicKey.findProgramAddress(
+                [tokenSwapInfo.publicKey.toBuffer()],
+                tokenSwap.programId
+            );
+
+
+        const callerTokenAAccount = await getOrCreateAssociatedAccount(tokenA, wallet.payer.publicKey);
+        const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, wallet.payer.publicKey);
+        const tokenATokenAccount = await getOrCreateAssociatedAccount(tokenA, SwapAuthorityPDA);
+        const tokenBTokenAccount = await getOrCreateAssociatedAccount(tokenB, SwapAuthorityPDA);
+
+
+        await executeSwap({
+            tokenSwap,
+            tokenSwapInfo,
+            amountIn: tokenAAmount,
+            amountOut,
+            userTransferAuthority: payer.publicKey,
+            userSourceTokenAccount: callerTokenAAccount,
+            userDestinationTokenAccount: callerTokenBAccount,
+            swapSourceTokenAccount: tokenATokenAccount,
+            swapDestinationTokenAccount: tokenBTokenAccount,
+            poolMintAccount: poolToken.publicKey,
+            poolFeeAccount: feeAccount,
+            wallet
+        })
+
+        console.log('new pool public key', tokenSwapInfo.publicKey);
+        console.log('pool token public key', poolToken.publicKey);
+        console.log('fee account public key', feeAccount);
+        console.log('initial pool token deposit token account', destinationAccount);
+        console.log('swap token account A', tokenATokenAccount);
+        console.log('swap token account B', tokenBTokenAccount);
 
     });
 

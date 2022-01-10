@@ -2,7 +2,6 @@ import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, BN } from '@project-serum/anchor';
 import { config } from "../../../config";
 import { NodeWallet } from '@metaplex/js';
-import { AnyPublicKey } from '@metaplex-foundation/mpl-core';
 
 const { accountLayout: { SWAP_ACCOUNT_SPACE } } = config;
 
@@ -63,7 +62,6 @@ export const initializeLinearPriceCurve = async ({
     // create token accounts for swap pda
 
     const tokenATokenAccount = await tokenA.createAccount(expectedSwapAuthorityPDA);
-
     const tokenBTokenAccount = await tokenB.createAccount(expectedSwapAuthorityPDA);
 
     // transfer tokens from caller to pda owned token account
@@ -106,13 +104,6 @@ export const initializeLinearPriceCurve = async ({
         }
     );
 
-    return {
-        tx,
-        poolToken,
-        feeAccount,
-        destinationAccount,
-        tokenATokenAccount,
-        tokenBTokenAccount
-    }
+    return { tx, destinationAccount }
 
 }

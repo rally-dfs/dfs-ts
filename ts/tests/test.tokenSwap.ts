@@ -6,6 +6,7 @@ import assert from 'assert';
 import { NodeWallet } from "@metaplex/js";
 import { initializeLinearPriceCurve, executeSwap } from "../src";
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { getTokenSwapInfo } from "../src/utils/utils";
 const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
 
 describe('token swap', () => {
@@ -20,8 +21,8 @@ describe('token swap', () => {
     let slopeDenominator;
     let initialTokenPriceA;
     let initialTokenPriceB;
-    let poolToken;
     let feeAccount;
+    let poolToken;
     let destinationAccount;
     let tokenATokenAccount;
     let tokenBTokenAccount;
@@ -74,22 +75,14 @@ describe('token swap', () => {
             TOKEN_PROGRAM_ID
         );
 
-
         // mint token B to associated token account for caller, this will be transferred to pda token account 
 
         const callerTokenBAccount = await tokenB.createAssociatedTokenAccount(payer.publicKey);
-        await tokenB.mintTo(callerTokenBAccount, payer, [], initialTokenBSupply.toNumber());
+        await tokenB.mintTo(callerTokenBAccount, payer, [], initialTokenBLiquidity.toNumber());
 
         const tokenSwap = await tokenSwapProgram(provider);
 
-        ({
-            poolToken,
-            feeAccount,
-            destinationAccount,
-            tokenATokenAccount,
-            tokenBTokenAccount
-
-        } = await initializeLinearPriceCurve({
+        const { destinationAccount } = await initializeLinearPriceCurve({
             tokenSwap,
             slopeNumerator,
             slopeDenominator,
@@ -101,9 +94,15 @@ describe('token swap', () => {
             tokenB,
             wallet,
             provider,
-            initialTokenBSupply
-        }))
+            initialTokenBLiquidity
+        })
 
+
+        const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId, payer);
+        poolToken = new Token(connection, data.poolToken, TOKEN_PROGRAM_ID, payer)
+        feeAccount = data.feeAccount;
+        tokenATokenAccount = data.tokenAccountA;
+        tokenBTokenAccount = data.tokenAccountB;
         const { amount: feeAmount } = await poolToken.getAccountInfo(feeAccount);
         const { amount: destinationAmount } = await poolToken.getAccountInfo(destinationAccount)
 
@@ -119,7 +118,7 @@ describe('token swap', () => {
         const { payer } = wallet
 
         const callerTokenAAccount = await tokenA.createAccount(payer.publicKey);
-        await tokenA.mintTo(callerTokenAAccount, payer, [], initialTokenASupply.toNumber());
+        await tokenA.mintTo(callerTokenAAccount, payer, [], initialTokenALiquidity.toNumber());
         const callerTokenBAccount = await tokenB.createAccount(payer.publicKey);
 
         await executeSwap({
