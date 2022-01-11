@@ -48,7 +48,7 @@ This command can be used on any of the solana networks (mainnet-beta, devnet, te
 `dfs-cli add-metadata`
 
 ```
-Usage: token-cli add-metadata [options] <mint>
+Usage: dfs-cli add-metadata [options] <mint>
 
 Arguments:
   mint                   token mint
