@@ -327,7 +327,7 @@ program
         const canonicalTokenAccount = canonical_token_account ? new PublicKey(canonical_token_account) : await getOrCreateAssociatedAccount(canonicalToken, wallet.payer.publicKey);
 
 
-        let { amount: wormBalance } = await canonicalToken.getAccountInfo(canonicalTokenAccount);
+        let { amount: wormBalance } = await wormholeToken.getAccountInfo(canonicalTokenAccount);
 
         const balance = wormBalance.div(ten.pow(new BN(wormDec))).toNumber();
 
