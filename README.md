@@ -45,10 +45,10 @@ Options:
 
 This command can be used on any of the solana networks (mainnet-beta, devnet, testnet). This command will add a metadata decorator to the specified token mint per the metaplex metadata standard. 
 
-`npx ts-node src/token-cli add-metadata`
+`dfs-cli add-metadata`
 
 ```
-Usage: token-cli add-metadata [options] <mint>
+Usage: dfs-cli add-metadata [options] <mint>
 
 Arguments:
   mint                   token mint
