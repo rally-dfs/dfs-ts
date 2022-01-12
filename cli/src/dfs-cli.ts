@@ -12,10 +12,14 @@ import {
     getMetadata,
     getMintInfo,
     swapWrappedForCanonical,
-    swapCanonicalForWrapped
-} from "../../ts/src"
+    swapCanonicalForWrapped,
+    initializeLinearPriceCurve,
+    executeSwap,
+    tokenSwapProgram,
+    getTokenSwapInfo
+} from 'dfs-js';
 import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
-const { Connection, clusterApiUrl, Keypair, PublicKey } = web3;
+const { Connection, clusterApiUrl, PublicKey, Keypair } = web3;
 
 const canonicalMint = new PublicKey(
     "RLYv2ubRMDLcGG2UyvPmnPmkfuQTsMbg4Jtygc7dmnq"
@@ -272,6 +276,8 @@ program
             wallet
         })
 
+        console.log(tx)
+
         await connection.confirmTransaction(tx)
 
         console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
@@ -300,7 +306,7 @@ program
     )
     .action(async options => {
 
-        const { env, keypair, wormhole_token_account, canonical_token_account } = options;
+        const { keypair, wormhole_token_account, canonical_token_account } = options;
         let { amount } = options;
         const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
         const canSwap = await canonicalSwapProgram(provider);
@@ -346,26 +352,164 @@ program
             wallet
         })
 
+        console.log(tx)
+
         await connection.confirmTransaction(tx)
 
-        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
+        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${wormholeMint} swapped for ${canonicalMint} sent to ${canonicalTokenAccount.toBase58()}`)
 
     });
 
-
-
-
 program
-    .command('init-tbc')
+    .command('tbc-init')
+    .argument('<token_a>', 'token A')
+    .argument('<token_b>', 'token B')
+    .argument('<token_b_liquidity', 'token B liquidity')
+    .option(
+        '-e, --env <string>',
+        'Solana cluster env name',
+        'devnet',
+    )
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
         '--keypair not provided',
     )
-    .action(async options => {
+    .requiredOption(
+        '--slope_numerator <string>',
+        'slope numerator',
+    )
+    .requiredOption(
+        '--slope_denominator <string>',
+        'slope denominator',
+    )
+    .requiredOption(
+        '--init_price_a <string>',
+        'initial price token A',
+    )
+    .requiredOption(
+        '--init_price_b <string>',
+        'initial price token B',
+    )
+    .action(async (token_a, token_b, token_b_liquidity, options) => {
 
-        console.log("coming soon!")
+        const { env, keypair, slope_numerator, slope_denominator, init_price_a, init_price_b } = options;
 
+
+        const { provider, wallet, connection } = getProvider(keypair, env)
+        const { payer } = wallet
+        const tokenSwap = await tokenSwapProgram(provider);
+
+        const slopeDenominator = new BN(slope_denominator);
+        const slopeNumerator = new BN(slope_numerator);
+        const initialTokenPriceA = new BN(init_price_a);
+        const initialTokenPriceB = new BN(init_price_b);
+        const initialTokenBLiquidity = new BN(token_b_liquidity);
+
+        //convert numbers to deimal values 
+
+        const tokenSwapInfo = Keypair.generate();
+
+        const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, payer);
+        const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, payer);
+
+
+        const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
+
+        const { destinationAccount } = await initializeLinearPriceCurve({
+            tokenSwap,
+            slopeNumerator,
+            slopeDenominator,
+            initialTokenPriceA,
+            initialTokenPriceB,
+            callerTokenBAccount,
+            tokenSwapInfo,
+            tokenA,
+            tokenB,
+            wallet,
+            provider,
+            initialTokenBLiquidity
+        })
+
+        const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId, payer);
+        const poolToken = new Token(connection, data.poolToken, TOKEN_PROGRAM_ID, payer)
+        const feeAccount = data.feeAccount;
+        const tokenATokenAccount = data.tokenAccountA;
+        const tokenBTokenAccount = data.tokenAccountB;
+
+
+        console.log('tcb succesfully initalized');
+        console.log('new pool public key', tokenSwapInfo.publicKey.toBase58());
+        console.log('swap token account A', tokenATokenAccount.toBase58());
+        console.log('swap token account B', tokenBTokenAccount.toBase58());
+        console.log('pool token public key', poolToken.publicKey.toBase58());
+        console.log('fee account public key', feeAccount.toBase58());
+        console.log('initial pool token deposit token account', destinationAccount.toBase58());
+
+    });
+
+
+program
+    .command('tbc-swap')
+    .argument('<swap>', 'swap')
+    .argument('<token_a>', 'token A')
+    .argument('<token_b>', 'token B')
+    .argument('<amount>', 'amount of token a to swap')
+    .option(
+        '-e, --env <string>',
+        'Solana cluster env name',
+        'devnet',
+    )
+    .requiredOption(
+        '-k, --keypair <path>',
+        `Solana wallet location`,
+        '--keypair not provided',
+    )
+    .action(async (swap, token_a, token_b, amount, options) => {
+
+        const { env, keypair, } = options;
+
+
+        const { provider, wallet, connection } = getProvider(keypair, env)
+        const { payer } = wallet;
+        const tokenSwap = await tokenSwapProgram(provider);
+
+        const tokenAAmount = new BN(amount);
+        const amountOut = new BN(0)
+
+
+        const tokenSwapInfo = new PublicKey(swap);
+
+        const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, keypair);
+        const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, keypair);
+
+        const [SwapAuthorityPDA] =
+            await PublicKey.findProgramAddress(
+                [tokenSwapInfo.toBuffer()],
+                tokenSwap.programId
+            );
+
+        const swapData = await getTokenSwapInfo(provider, tokenSwapInfo, tokenSwap.programId, payer);
+
+        const callerTokenAAccount = await getOrCreateAssociatedAccount(tokenA, payer.publicKey);
+        const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
+
+        await executeSwap({
+            tokenSwap,
+            tokenSwapInfo,
+            amountIn: tokenAAmount,
+            amountOut,
+            userTransferAuthority: payer.publicKey,
+            userSourceTokenAccount: callerTokenAAccount,
+            userDestinationTokenAccount: callerTokenBAccount,
+            swapSourceTokenAccount: swapData.tokenAccountA,
+            swapDestinationTokenAccount: swapData.tokenAccountB,
+            poolMintAccount: swapData.poolToken,
+            poolFeeAccount: swapData.feeAccount,
+            wallet
+        })
+
+        console.log('swap executed successfully');
     });
 
 program.parse(process.argv);
