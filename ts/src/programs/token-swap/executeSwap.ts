@@ -6,7 +6,7 @@ const { PublicKey, SystemProgram: { programId } } = web3;
 
 interface executeSwapParams {
     tokenSwap: Program;
-    tokenSwapInfo: any;
+    tokenSwapInfo: web3.PublicKey;
     amountIn: BN;
     amountOut: BN;
     userTransferAuthority: web3.PublicKey;
@@ -41,7 +41,7 @@ export const executeSwap = async ({
 
     const [expectedSwapAuthorityPDA] =
         await PublicKey.findProgramAddress(
-            [tokenSwapInfo.publicKey.toBuffer()],
+            [tokenSwapInfo.toBuffer()],
             tokenSwap.programId
         );
 
@@ -50,7 +50,7 @@ export const executeSwap = async ({
         amountOut,
         {
             accounts: {
-                tokenSwap: tokenSwapInfo.publicKey,
+                tokenSwap: tokenSwapInfo,
                 swapAuthority: expectedSwapAuthorityPDA,
                 userTransferAuthority,
                 source: userSourceTokenAccount,

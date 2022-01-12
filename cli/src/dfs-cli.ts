@@ -450,11 +450,12 @@ program
     });
 
 
-/*program
+program
     .command('tbc-swap')
+    .argument('<swap>', 'swap')
     .argument('<token_a>', 'token A')
     .argument('<token_b>', 'token B')
-    .argument('<amount', 'amount of token a to swap')
+    .argument('<amount>', 'amount of token a to swap')
     .option(
         '-e, --env <string>',
         'Solana cluster env name',
@@ -465,21 +466,9 @@ program
         `Solana wallet location`,
         '--keypair not provided',
     )
-    .requiredOption(
-        '--slope_denominator <string>',
-        'slope denominator',
-    )
-    .requiredOption(
-        '--init_price_a <string>',
-        'initial price token A',
-    )
-    .requiredOption(
-        '--init_price_b <string>',
-        'initial price token B',
-    )
-    .action(async (token_a, token_b, amount, options) => {
+    .action(async (swap, token_a, token_b, amount, options) => {
 
-        const { env, keypair, slope_numerator, slope_denominator, init_price_a, init_price_b } = options;
+        const { env, keypair, } = options;
 
 
         const { provider, wallet, connection } = getProvider(keypair, env)
@@ -490,22 +479,21 @@ program
         const amountOut = new BN(0)
 
 
-        const tokenSwapInfo = Keypair.generate();
+        const tokenSwapInfo = new PublicKey(swap);
 
-        const tokenA = new Token(connection, token_a, TOKEN_PROGRAM_ID, keypair);
-        const tokenB = new Token(connection, token_b, TOKEN_PROGRAM_ID, keypair);
+        const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, keypair);
+        const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, keypair);
+
         const [SwapAuthorityPDA] =
             await PublicKey.findProgramAddress(
-                [tokenSwapInfo.publicKey.toBuffer()],
+                [tokenSwapInfo.toBuffer()],
                 tokenSwap.programId
             );
 
+        const swapData = await getTokenSwapInfo(provider, tokenSwapInfo, tokenSwap.programId, payer);
 
-        const callerTokenAAccount = await getOrCreateAssociatedAccount(tokenA, wallet.payer.publicKey);
-        const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, wallet.payer.publicKey);
-        const tokenATokenAccount = await getOrCreateAssociatedAccount(tokenA, SwapAuthorityPDA);
-        const tokenBTokenAccount = await getOrCreateAssociatedAccount(tokenB, SwapAuthorityPDA);
-
+        const callerTokenAAccount = await getOrCreateAssociatedAccount(tokenA, payer.publicKey);
+        const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
 
         await executeSwap({
             tokenSwap,
@@ -515,21 +503,15 @@ program
             userTransferAuthority: payer.publicKey,
             userSourceTokenAccount: callerTokenAAccount,
             userDestinationTokenAccount: callerTokenBAccount,
-            swapSourceTokenAccount: tokenATokenAccount,
-            swapDestinationTokenAccount: tokenBTokenAccount,
-            poolMintAccount: poolToken.publicKey,
-            poolFeeAccount: feeAccount,
+            swapSourceTokenAccount: swapData.tokenAccountA,
+            swapDestinationTokenAccount: swapData.tokenAccountB,
+            poolMintAccount: swapData.poolToken,
+            poolFeeAccount: swapData.feeAccount,
             wallet
         })
 
-        console.log('new pool public key', tokenSwapInfo.publicKey);
-        console.log('pool token public key', poolToken.publicKey);
-        console.log('fee account public key', feeAccount);
-        console.log('initial pool token deposit token account', destinationAccount);
-        console.log('swap token account A', tokenATokenAccount);
-        console.log('swap token account B', tokenBTokenAccount);
-
-    });*/
+        console.log('swap executed successfully');
+    });
 
 program.parse(process.argv);
 

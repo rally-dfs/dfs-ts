@@ -6,7 +6,7 @@ import assert from 'assert';
 import { NodeWallet } from "@metaplex/js";
 import { initializeLinearPriceCurve, executeSwap } from "../src";
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getTokenSwapInfo } from "../src/utils/utils";
+import { getTokenSwapInfo } from "../src/utils";
 const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
 
 describe('token swap', () => {
@@ -83,7 +83,7 @@ describe('token swap', () => {
         const tokenSwap = await tokenSwapProgram(provider);
 
         const { destinationAccount } = await initializeLinearPriceCurve({
-            tokenSwap,
+            tokenSwap: tokenSwapInfo.publicKey,
             slopeNumerator,
             slopeDenominator,
             initialTokenPriceA,
