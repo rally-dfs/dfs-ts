@@ -38,7 +38,6 @@ const wormholeData = new PublicKey(
 );
 
 
-
 const ten = new BN(10);
 
 // create fungible SPL token with metadata + initial supply
@@ -333,7 +332,7 @@ program
         const canonicalTokenAccount = canonical_token_account ? new PublicKey(canonical_token_account) : await getOrCreateAssociatedAccount(canonicalToken, wallet.payer.publicKey);
 
 
-        let { amount: wormBalance } = await canonicalToken.getAccountInfo(canonicalTokenAccount);
+        let { amount: wormBalance } = await wormholeToken.getAccountInfo(wormholeTokenAccount);
 
         const balance = wormBalance.div(ten.pow(new BN(wormDec))).toNumber();
 

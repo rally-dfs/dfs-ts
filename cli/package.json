@@ -1,6 +1,6 @@
 {
   "name": "dfs-cli",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "",
   "bin": {
     "dfs-cli": "./build/cli/src/dfs-cli.js"
