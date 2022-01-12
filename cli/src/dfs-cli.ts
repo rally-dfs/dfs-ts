@@ -16,6 +16,7 @@ import {
     initializeLinearPriceCurve,
     executeSwap,
     tokenSwapProgram,
+    getTokenSwapInfo
 } from "../../ts/src"
 import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
 const { Connection, clusterApiUrl, PublicKey, Keypair } = web3;
@@ -360,14 +361,16 @@ program
 
     });
 
-
-
-
 program
     .command('tbc-init')
     .argument('<token_a>', 'token A')
     .argument('<token_b>', 'token B')
     .argument('<token_b_liquidity', 'token B liquidity')
+    .option(
+        '-e, --env <string>',
+        'Solana cluster env name',
+        'devnet',
+    )
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
@@ -394,7 +397,7 @@ program
         const { env, keypair, slope_numerator, slope_denominator, init_price_a, init_price_b } = options;
 
 
-        const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { provider, wallet, connection } = getProvider(keypair, env)
         const { payer } = wallet
         const tokenSwap = await tokenSwapProgram(provider);
 
@@ -404,22 +407,17 @@ program
         const initialTokenPriceB = new BN(init_price_b);
         const initialTokenBLiquidity = new BN(token_b_liquidity);
 
+        //convert numbers to deimal values 
+
         const tokenSwapInfo = Keypair.generate();
 
-        const tokenA = new Token(connection, token_a, TOKEN_PROGRAM_ID, payer);
-        const tokenB = new Token(connection, token_b, TOKEN_PROGRAM_ID, payer);
+        const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, payer);
+        const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, payer);
+
 
         const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
 
-
-        const {
-            poolToken,
-            feeAccount,
-            destinationAccount,
-            tokenATokenAccount,
-            tokenBTokenAccount
-
-        } = await initializeLinearPriceCurve({
+        const { destinationAccount } = await initializeLinearPriceCurve({
             tokenSwap,
             slopeNumerator,
             slopeDenominator,
@@ -434,21 +432,34 @@ program
             initialTokenBLiquidity
         })
 
-        console.log('new pool public key', tokenSwapInfo.publicKey);
-        console.log('pool token public key', poolToken.publicKey);
-        console.log('fee account public key', feeAccount);
-        console.log('initial pool token deposit token account', destinationAccount);
-        console.log('swap token account A', tokenATokenAccount);
-        console.log('swap token account B', tokenBTokenAccount);
+        const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId, payer);
+        const poolToken = new Token(connection, data.poolToken, TOKEN_PROGRAM_ID, payer)
+        const feeAccount = data.feeAccount;
+        const tokenATokenAccount = data.tokenAccountA;
+        const tokenBTokenAccount = data.tokenAccountB;
+
+
+        console.log('tcb succesfully initalized');
+        console.log('new pool public key', tokenSwapInfo.publicKey.toBase58());
+        console.log('swap token account A', tokenATokenAccount.toBase58());
+        console.log('swap token account B', tokenBTokenAccount.toBase58());
+        console.log('pool token public key', poolToken.publicKey.toBase58());
+        console.log('fee account public key', feeAccount.toBase58());
+        console.log('initial pool token deposit token account', destinationAccount.toBase58());
 
     });
 
 
-program
+/*program
     .command('tbc-swap')
     .argument('<token_a>', 'token A')
     .argument('<token_b>', 'token B')
     .argument('<amount', 'amount of token a to swap')
+    .option(
+        '-e, --env <string>',
+        'Solana cluster env name',
+        'devnet',
+    )
     .requiredOption(
         '-k, --keypair <path>',
         `Solana wallet location`,
@@ -471,7 +482,7 @@ program
         const { env, keypair, slope_numerator, slope_denominator, init_price_a, init_price_b } = options;
 
 
-        const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { provider, wallet, connection } = getProvider(keypair, env)
         const { payer } = wallet;
         const tokenSwap = await tokenSwapProgram(provider);
 
@@ -518,7 +529,7 @@ program
         console.log('swap token account A', tokenATokenAccount);
         console.log('swap token account B', tokenBTokenAccount);
 
-    });
+    });*/
 
 program.parse(process.argv);
 
