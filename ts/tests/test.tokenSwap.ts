@@ -20,7 +20,6 @@ describe('token swap', () => {
     let slopeNumerator;
     let slopeDenominator;
     let initialTokenPriceA;
-    let initialTokenPriceB;
     let feeAccount;
     let poolToken;
     let destinationAccount;
@@ -55,7 +54,6 @@ describe('token swap', () => {
         slopeNumerator = new BN(1);
         slopeDenominator = new BN(200000000);
         initialTokenPriceA = new BN(50);
-        initialTokenPriceB = new BN(30000000000);
 
         tokenA = await Token.createMint(
             connection,
@@ -83,11 +81,10 @@ describe('token swap', () => {
         const tokenSwap = await tokenSwapProgram(provider);
 
         const { destinationAccount } = await initializeLinearPriceCurve({
-            tokenSwap: tokenSwapInfo.publicKey,
+            tokenSwap,
             slopeNumerator,
             slopeDenominator,
             initialTokenPriceA,
-            initialTokenPriceB,
             callerTokenBAccount,
             tokenSwapInfo,
             tokenA,
@@ -123,7 +120,7 @@ describe('token swap', () => {
 
         await executeSwap({
             tokenSwap,
-            tokenSwapInfo,
+            tokenSwapInfo: tokenSwapInfo.publicKey,
             amountIn: swapInitAmountTokenA,
             amountOut,
             userTransferAuthority: payer.publicKey,
