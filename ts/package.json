@@ -1,10 +1,12 @@
 {
-  "name": "dfs-ts",
+  "name": "dfs-js",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
   "scripts": {
-    "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+    "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/**/*.ts",
+    "build": "tsc -p ./src"
   },
   "keywords": [],
   "author": "",

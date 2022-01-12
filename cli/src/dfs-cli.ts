@@ -17,7 +17,7 @@ import {
     executeSwap,
     tokenSwapProgram,
     getTokenSwapInfo
-} from "../../ts/src"
+} from 'dfs-js';
 import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
 const { Connection, clusterApiUrl, PublicKey, Keypair } = web3;
 
