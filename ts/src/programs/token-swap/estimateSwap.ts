@@ -1,10 +1,10 @@
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, BN } from '@project-serum/anchor';
-import { NodeWallet } from '@metaplex/js';
+import { Connection, NodeWallet } from '@metaplex/js';
 
 const { PublicKey, SystemProgram: { programId } } = web3;
 
-interface executeSwapParams {
+interface estimateSwapParams {
     tokenSwap: Program;
     tokenSwapInfo: web3.PublicKey;
     amountIn: BN;
@@ -17,9 +17,10 @@ interface executeSwapParams {
     poolMintAccount: web3.PublicKey;
     poolFeeAccount: web3.PublicKey;
     wallet: NodeWallet;
+    connection: Connection;
 }
 
-export const executeSwap = async ({
+export const estimateSwap = async ({
     tokenSwap,
     tokenSwapInfo,
     amountIn,
@@ -31,9 +32,10 @@ export const executeSwap = async ({
     swapDestinationTokenAccount,
     poolMintAccount,
     poolFeeAccount,
-    wallet
+    wallet,
+    connection
 
-} = {} as executeSwapParams) => {
+} = {} as estimateSwapParams) => {
 
     const { payer } = wallet;
 
@@ -45,7 +47,7 @@ export const executeSwap = async ({
             tokenSwap.programId
         );
 
-    return tokenSwap.rpc.swap(
+    const Ix = [await tokenSwap.instruction.swap(
         amountIn,
         amountOut,
         {
@@ -60,9 +62,13 @@ export const executeSwap = async ({
                 poolMint: poolMintAccount,
                 poolFee: poolFeeAccount,
                 tokenProgram: TOKEN_PROGRAM_ID,
-            },
-            signers: [payer]
+            }
         },
-    )
+    )]
+
+    const tx = new web3.Transaction();
+    tx.add(...Ix);
+    //simulate transaction return simulated state change for userSourceTokenAccount and userDestinationTokenAccount
+    return connection.simulateTransaction(tx, [payer], [userSourceTokenAccount, userDestinationTokenAccount]);
 
 }

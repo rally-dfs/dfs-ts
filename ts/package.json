@@ -6,6 +6,7 @@
   "types": "build/src/index.d.ts",
   "scripts": {
     "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/**/*.ts",
+    "test-tbc": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/test.tokenSwap.ts",
     "build": "tsc -p ./src"
   },
   "keywords": [],

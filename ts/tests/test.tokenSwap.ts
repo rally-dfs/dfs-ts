@@ -4,10 +4,10 @@ import {
 import { web3, Provider, BN } from "@project-serum/anchor"
 import assert from 'assert';
 import { NodeWallet } from "@metaplex/js";
-import { initializeLinearPriceCurve, executeSwap } from "../src";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getTokenSwapInfo } from "../src/utils";
-const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
+import { initializeLinearPriceCurve, executeSwap, estimateSwap } from "../src";
+import { Token, TOKEN_PROGRAM_ID, AccountLayout, u64 } from "@solana/spl-token";
+import { getTokenSwapInfo, accountInfoFromSim } from "../src/utils";
+const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, PublicKey } = web3;
 
 describe('token swap', () => {
 
@@ -22,9 +22,10 @@ describe('token swap', () => {
     let initialTokenPriceA;
     let feeAccount;
     let poolToken;
-    let destinationAccount;
     let tokenATokenAccount;
     let tokenBTokenAccount;
+    let callerTokenAAccount;
+    let callerTokenBAccount;
     const initialTokenBLiquidity = new BN(500 * 10 ** 8);
     const initialTokenALiquidity = new BN(10000 * 10 ** 8);
     const swapInitAmountTokenA = new BN(2400 * 10 ** 8);
@@ -36,24 +37,8 @@ describe('token swap', () => {
         provider = new Provider(new Connection(clusterApiUrl("devnet")), new NodeWallet(walletKeyPair), {});
         //provider = new Provider(new Connection('http://127.0.0.1:8899'), new NodeWallet(walletKeyPair), {});
         ({ connection, wallet } = provider);
+        const { payer } = wallet;
         await connection.confirmTransaction(await connection.requestAirdrop(wallet.publicKey, LAMPORTS_PER_SOL))
-    })
-
-    it('it should get an instance of the token swap program', async () => {
-
-        const programName = 'anchor_token_swap'
-        const { idl } = await tokenSwapProgram(provider);
-        assert.strictEqual(idl.name, programName);
-
-    })
-
-    it('it should initiliaze a linear price curve', async () => {
-
-        const { payer } = wallet
-
-        slopeNumerator = new BN(1);
-        slopeDenominator = new BN(200000000);
-        initialTokenPriceA = new BN(50);
 
         tokenA = await Token.createMint(
             connection,
@@ -64,6 +49,7 @@ describe('token swap', () => {
             TOKEN_PROGRAM_ID
         );
 
+
         tokenB = await Token.createMint(
             connection,
             payer,
@@ -73,10 +59,29 @@ describe('token swap', () => {
             TOKEN_PROGRAM_ID
         );
 
-        // mint token B to associated token account for caller, this will be transferred to pda token account 
-
-        const callerTokenBAccount = await tokenB.createAssociatedTokenAccount(payer.publicKey);
+        callerTokenBAccount = await tokenB.createAssociatedTokenAccount(payer.publicKey);
+        callerTokenAAccount = await tokenA.createAssociatedTokenAccount(payer.publicKey);
         await tokenB.mintTo(callerTokenBAccount, payer, [], initialTokenBLiquidity.toNumber());
+        await tokenA.mintTo(callerTokenAAccount, payer, [], initialTokenALiquidity.toNumber());
+
+    })
+
+    it('it should get an instance of the token swap program', async () => {
+
+        const programName = 'anchor_token_swap'
+        const { idl } = await tokenSwapProgram(provider);
+        assert.strictEqual(idl.name, programName);
+
+    })
+
+
+    it('it should initiliaze a linear price curve', async () => {
+
+        const { payer } = wallet
+
+        slopeNumerator = new BN(1);
+        slopeDenominator = new BN(200000000);
+        initialTokenPriceA = new BN(50);
 
         const tokenSwap = await tokenSwapProgram(provider);
 
@@ -108,15 +113,47 @@ describe('token swap', () => {
 
     })
 
+
+
+    it('it should estimate the result of a token swap', async () => {
+
+        const tokenSwap = await tokenSwapProgram(provider);
+        const amountOut = new BN(0)
+        const { payer } = wallet
+
+        const estimate = await estimateSwap({
+            tokenSwap,
+            tokenSwapInfo: tokenSwapInfo.publicKey,
+            amountIn: swapInitAmountTokenA,
+            amountOut,
+            userTransferAuthority: payer.publicKey,
+            userSourceTokenAccount: callerTokenAAccount,
+            userDestinationTokenAccount: callerTokenBAccount,
+            swapSourceTokenAccount: tokenATokenAccount,
+            swapDestinationTokenAccount: tokenBTokenAccount,
+            poolMintAccount: poolToken.publicKey,
+            poolFeeAccount: feeAccount,
+            wallet,
+            connection
+        })
+
+        const { value: { accounts } } = estimate;
+
+        const accountAInfo = await accountInfoFromSim(accounts[0])
+        const accountBInfo = await accountInfoFromSim(accounts[1])
+
+        assert.ok(accountAInfo.amount.eq(new BN(760000000000)));
+        assert.ok(accountBInfo.amount.eq(new BN(4000000000)));
+
+
+    })
+
     it('it should execute a swap on a linear price curve', async () => {
 
         const tokenSwap = await tokenSwapProgram(provider);
         const amountOut = new BN(0)
         const { payer } = wallet
 
-        const callerTokenAAccount = await tokenA.createAccount(payer.publicKey);
-        await tokenA.mintTo(callerTokenAAccount, payer, [], initialTokenALiquidity.toNumber());
-        const callerTokenBAccount = await tokenB.createAccount(payer.publicKey);
 
         await executeSwap({
             tokenSwap,
@@ -133,6 +170,15 @@ describe('token swap', () => {
             wallet
         })
 
+        const usertokenAInfo = await tokenA.getAccountInfo(callerTokenAAccount);
+        const usertokenBInfo = await tokenB.getAccountInfo(callerTokenBAccount);
+        const swapTokenAInfo = await tokenA.getAccountInfo(tokenATokenAccount);
+        const swapTokenBInfo = await tokenB.getAccountInfo(tokenBTokenAccount);
+
+        assert.ok(usertokenAInfo.amount.eq(new BN(760000000000)));
+        assert.ok(swapTokenAInfo.amount.eq(new BN(240000000000)));
+        assert.ok(usertokenBInfo.amount.eq(new BN(4000000000)));
+        assert.ok(swapTokenBInfo.amount.eq(new BN(46000000000)));
     })
 
 })

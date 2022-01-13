@@ -1,6 +1,7 @@
 import { config } from "../../config"
 import { Program, web3, BN } from '@project-serum/anchor';
 import * as BufferLayout from "@solana/buffer-layout";
+import { u64, AccountLayout } from "@solana/spl-token";
 const { PublicKey } = web3;
 
 
@@ -103,6 +104,18 @@ class Numberu64 extends BN {
             16,
         );
     }
+}
+
+export const accountInfoFromSim = async (account) => {
+
+    let data = account.data;
+    data = Buffer.from(data[0], data[1]);
+    const accountInfo = AccountLayout.decode(data);
+    accountInfo.mint = new PublicKey(accountInfo.mint);
+    accountInfo.owner = new PublicKey(accountInfo.owner);
+    accountInfo.amount = u64.fromBuffer(accountInfo.amount);
+    return accountInfo;
+
 }
 
 export const getTokenSwapInfo = async (provider, swapInfoPubKey, programId, payer) => {
