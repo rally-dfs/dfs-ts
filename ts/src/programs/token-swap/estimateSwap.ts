@@ -1,6 +1,7 @@
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, BN } from '@project-serum/anchor';
 import { Connection, NodeWallet } from '@metaplex/js';
+import { accountInfoFromSim } from '../..';
 
 const { PublicKey, SystemProgram: { programId } } = web3;
 
@@ -69,6 +70,14 @@ export const estimateSwap = async ({
     const tx = new web3.Transaction();
     tx.add(...Ix);
     //simulate transaction return simulated state change for userSourceTokenAccount and userDestinationTokenAccount
-    return connection.simulateTransaction(tx, [payer], [userSourceTokenAccount, userDestinationTokenAccount]);
+    const { value: { accounts } } = await connection.simulateTransaction(tx, [payer], [userSourceTokenAccount, userDestinationTokenAccount]);
+
+    const accountAInfo = await accountInfoFromSim(accounts[0])
+    const accountBInfo = await accountInfoFromSim(accounts[1])
+
+    return { amountTokenAPostSwap: accountAInfo.amount, amountTokenBPostSwap: accountBInfo.amount }
+
+
+
 
 }

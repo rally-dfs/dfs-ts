@@ -121,7 +121,7 @@ describe('token swap', () => {
         const amountOut = new BN(0)
         const { payer } = wallet
 
-        const estimate = await estimateSwap({
+        const { amountTokenAPostSwap, amountTokenBPostSwap } = await estimateSwap({
             tokenSwap,
             tokenSwapInfo: tokenSwapInfo.publicKey,
             amountIn: swapInitAmountTokenA,
@@ -137,14 +137,8 @@ describe('token swap', () => {
             connection
         })
 
-        const { value: { accounts } } = estimate;
-
-        const accountAInfo = await accountInfoFromSim(accounts[0])
-        const accountBInfo = await accountInfoFromSim(accounts[1])
-
-        assert.ok(accountAInfo.amount.eq(new BN(760000000000)));
-        assert.ok(accountBInfo.amount.eq(new BN(4000000000)));
-
+        assert.ok(amountTokenAPostSwap.eq(new BN(760000000000)));
+        assert.ok(amountTokenBPostSwap.eq(new BN(4000000000)));
 
     })
 
