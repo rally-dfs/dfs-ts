@@ -11,7 +11,8 @@ interface initializeLinearPriceCurveParams {
     tokenSwap: Program;
     slopeNumerator: BN;
     slopeDenominator: BN;
-    initialTokenPriceA: BN;
+    initialTokenAPriceNumerator: BN;
+    initialTokenAPriceDenominator: BN;
     callerTokenBAccount: web3.PublicKey;
     tokenSwapInfo: any;
     tokenA: Token;
@@ -25,7 +26,8 @@ export const initializeLinearPriceCurve = async ({
     tokenSwap,
     slopeNumerator,
     slopeDenominator,
-    initialTokenPriceA,
+    initialTokenAPriceNumerator,
+    initialTokenAPriceDenominator,
     callerTokenBAccount,
     tokenSwapInfo,
     tokenA,
@@ -73,7 +75,8 @@ export const initializeLinearPriceCurve = async ({
     const tx = await tokenSwap.rpc.initializeLinearPrice(
         slopeNumerator,
         slopeDenominator,
-        initialTokenPriceA,
+        initialTokenAPriceNumerator,
+        initialTokenAPriceDenominator,
         {
             accounts: {
                 tokenSwap: tokenSwapInfo.publicKey,
