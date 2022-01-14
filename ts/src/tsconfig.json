@@ -15,6 +15,6 @@
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "declaration": true,
-        "outDir": "./../build",
+        "outDir": "./../build"
     }
 }

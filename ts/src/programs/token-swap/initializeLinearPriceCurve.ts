@@ -12,7 +12,6 @@ interface initializeLinearPriceCurveParams {
     slopeNumerator: BN;
     slopeDenominator: BN;
     initialTokenPriceA: BN;
-    initialTokenPriceB: BN;
     callerTokenBAccount: web3.PublicKey;
     tokenSwapInfo: any;
     tokenA: Token;
@@ -27,7 +26,6 @@ export const initializeLinearPriceCurve = async ({
     slopeNumerator,
     slopeDenominator,
     initialTokenPriceA,
-    initialTokenPriceB,
     callerTokenBAccount,
     tokenSwapInfo,
     tokenA,
@@ -76,7 +74,6 @@ export const initializeLinearPriceCurve = async ({
         slopeNumerator,
         slopeDenominator,
         initialTokenPriceA,
-        initialTokenPriceB,
         {
             accounts: {
                 tokenSwap: tokenSwapInfo.publicKey,

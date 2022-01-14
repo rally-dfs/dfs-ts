@@ -141,10 +141,6 @@
                 {
                     "name": "initialTokenAPrice",
                     "type": "u64"
-                },
-                {
-                    "name": "initialTokenBPrice",
-                    "type": "u64"
                 }
             ]
         },
