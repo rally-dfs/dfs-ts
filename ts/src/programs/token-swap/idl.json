@@ -139,7 +139,11 @@
                     "type": "u64"
                 },
                 {
-                    "name": "initialTokenAPrice",
+                    "name": "initialTokenAPriceNumerator",
+                    "type": "u64"
+                },
+                {
+                    "name": "initialTokenAPriceDenominator",
                     "type": "u64"
                 }
             ]

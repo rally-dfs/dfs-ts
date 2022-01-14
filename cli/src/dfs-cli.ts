@@ -384,16 +384,16 @@ program
         'slope denominator',
     )
     .requiredOption(
-        '--init_price_a <string>',
+        '--init_price_a_numerator <string>',
         'initial price token A',
     )
     .requiredOption(
-        '--init_price_b <string>',
+        '--init_price_a_denominator <string>',
         'initial price token B',
     )
     .action(async (token_a, token_b, token_b_liquidity, options) => {
 
-        const { env, keypair, slope_numerator, slope_denominator, init_price_a, init_price_b } = options;
+        const { env, keypair, slope_numerator, slope_denominator, init_price_a_numerator, init_price_a_denominator } = options;
 
 
         const { provider, wallet, connection } = getProvider(keypair, env)
@@ -402,8 +402,8 @@ program
 
         const slopeDenominator = new BN(slope_denominator);
         const slopeNumerator = new BN(slope_numerator);
-        const initialTokenPriceA = new BN(init_price_a);
-        const initialTokenPriceB = new BN(init_price_b);
+        const initialTokenAPriceNumerator = new BN(init_price_a_numerator);
+        const initialTokenAPriceDenominator = new BN(init_price_a_denominator);
         const initialTokenBLiquidity = new BN(token_b_liquidity);
 
         //convert numbers to deimal values 
@@ -413,15 +413,14 @@ program
         const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, payer);
         const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, payer);
 
-
         const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
 
         const { destinationAccount } = await initializeLinearPriceCurve({
             tokenSwap,
             slopeNumerator,
             slopeDenominator,
-            initialTokenPriceA,
-            initialTokenPriceB,
+            initialTokenAPriceNumerator,
+            initialTokenAPriceDenominator,
             callerTokenBAccount,
             tokenSwapInfo,
             tokenA,

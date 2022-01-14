@@ -360,10 +360,10 @@
   "resolved" "https://registry.npmjs.org/delayed-stream/-/delayed-stream-1.0.0.tgz"
   "version" "1.0.0"
 
-"dfs-js@^1.0.1":
-  "integrity" "sha512-X6WaIJuHh7AFSdvYSOg3lxX+U9UQrX/iwFD9jOw1NwoQAicOeEYgQW1bd+OjFje8yaK54Dzqy77JfH5v3MBntw=="
-  "resolved" "https://registry.npmjs.org/dfs-js/-/dfs-js-1.0.1.tgz"
-  "version" "1.0.1"
+"dfs-js@^1.0.4":
+  "integrity" "sha512-rHxgwmfFU7KSqT3IM0OXNsRsCg9X0kC9YCVRg2jsUrfNI1+YRf5MjurryIgNUsRInEdL1ZATsunAbPpvBn3h+w=="
+  "resolved" "https://registry.npmjs.org/dfs-js/-/dfs-js-1.0.4.tgz"
+  "version" "1.0.4"
   dependencies:
     "@metaplex-foundation/mpl-core" "^0.0.2"
     "@metaplex-foundation/mpl-token-metadata" "^0.0.2"
