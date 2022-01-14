@@ -35,8 +35,8 @@ describe('token swap', () => {
     before(async () => {
         const walletKeyPair = Keypair.generate();
         tokenSwapInfo = Keypair.generate();
-        //provider = new Provider(new Connection(clusterApiUrl("devnet")), new NodeWallet(walletKeyPair), {});
-        provider = new Provider(new Connection('http://127.0.0.1:8899'), new NodeWallet(walletKeyPair), {});
+        provider = new Provider(new Connection(clusterApiUrl("devnet")), new NodeWallet(walletKeyPair), {});
+        //provider = new Provider(new Connection('http://127.0.0.1:8899'), new NodeWallet(walletKeyPair), {});
         ({ connection, wallet } = provider);
         const { payer } = wallet;
         await connection.confirmTransaction(await connection.requestAirdrop(wallet.publicKey, LAMPORTS_PER_SOL))
