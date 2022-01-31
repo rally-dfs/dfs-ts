@@ -38,7 +38,6 @@ export const createToken = async ({ initialSupply, tokenData, connection, wallet
     const tokenAccount = await tokenMint.createAssociatedTokenAccount(wallet.publicKey);
 
 
-
     // send initial supply to token account
 
     await tokenMint.mintTo(
@@ -47,9 +46,6 @@ export const createToken = async ({ initialSupply, tokenData, connection, wallet
         [],
         new u64(initialSupply.toString())
     )
-
-
-
 
     // create metadata obj
 
@@ -61,6 +57,7 @@ export const createToken = async ({ initialSupply, tokenData, connection, wallet
         sellerFeeBasisPoints: null,
         creators: null,
     });
+
 
     // create metadata
     const tx = await createMetadata(

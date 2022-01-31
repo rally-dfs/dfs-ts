@@ -1,12 +1,13 @@
 {
   "name": "dfs-js",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
     "test": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/**/*.ts",
     "test-tbc": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/test.tokenSwap.ts",
+    "test-token": "./node_modules/ts-mocha/bin/ts-mocha -p ./src/tsconfig.json -t 1000000 tests/test.token.ts",
     "build": "tsc -p ./src"
   },
   "keywords": [],
@@ -14,12 +15,13 @@
   "license": "ISC",
   "dependencies": {
     "@metaplex-foundation/mpl-core": "^0.0.2",
-    "@metaplex-foundation/mpl-token-metadata": "^0.0.2",
-    "@metaplex/js": "^4.10.0",
+    "@metaplex-foundation/mpl-token-metadata": "^1.1.0",
+    "@metaplex/js": "^4.10.1",
     "@project-serum/anchor": "^0.19.0",
     "@solana/buffer-layout": "^3.0.0",
     "@solana/spl-token": "^0.1.8",
-    "commander": "^2.20.3"
+    "commander": "^2.20.3",
+    "update": "^0.7.4"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

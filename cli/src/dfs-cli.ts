@@ -4,7 +4,7 @@ import { web3, BN } from '@project-serum/anchor';
 import { TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
 import { NodeWallet } from '@metaplex/js';
 import { program } from 'commander';
-program.version('0.0.1');
+program.version('1.0.4');
 import {
     addMetadata,
     canonicalSwapProgram,
@@ -18,8 +18,11 @@ import {
     tokenSwapProgram,
     getTokenSwapInfo
 } from 'dfs-js';
+
 import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
+
 const { Connection, clusterApiUrl, PublicKey, Keypair } = web3;
+
 
 const canonicalMint = new PublicKey(
     "RLYv2ubRMDLcGG2UyvPmnPmkfuQTsMbg4Jtygc7dmnq"
@@ -117,9 +120,10 @@ program
         // connect to cluster and load wallet
         const connection = new Connection(clusterApiUrl(env))
         const wallet = new NodeWallet(loadKeypair(keypair))
+        const { payer } = wallet;
 
         // init token instance
-        const tokenMint = new Token(connection, mint, TOKEN_PROGRAM_ID, keypair);
+        const tokenMint = new Token(connection, new PublicKey(mint), TOKEN_PROGRAM_ID, payer);
 
         //add metdata to token
         const tx = await addMetadata({
@@ -142,11 +146,6 @@ program
         '-e, --env <string>',
         'Solana cluster env name',
         'devnet',
-    )
-    .requiredOption(
-        '-k, --keypair <path>',
-        `Solana wallet location`,
-        '--keypair not provided',
     )
     .action(async (mint, options) => {
 
@@ -174,10 +173,11 @@ program
 
         const { keypair } = options;
         const { wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { payer } = wallet;
 
         //decimals of destination-
 
-        const canv1 = new Token(connection, canonicalMint, TOKEN_PROGRAM_ID, wallet.payer);
+        const canv1 = new Token(connection, new PublicKey(canonicalMint), TOKEN_PROGRAM_ID, payer);
         const { decimals } = await canv1.getMintInfo()
         const associatedTokenAcct = await canv1.getOrCreateAssociatedAccountInfo(wallet.publicKey);
         const { amount } = await canv1.getAccountInfo(associatedTokenAcct.address);
@@ -198,8 +198,9 @@ program
 
         const { keypair } = options;
         const { wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { payer } = wallet;
 
-        const whv2 = new Token(connection, wormholeMint, TOKEN_PROGRAM_ID, wallet.payer);
+        const whv2 = new Token(connection, new PublicKey(wormholeMint), TOKEN_PROGRAM_ID, payer);
         const { decimals } = await whv2.getMintInfo()
         const associatedTokenAcct = await whv2.getOrCreateAssociatedAccountInfo(wallet.publicKey);
         const { amount } = await whv2.getAccountInfo(associatedTokenAcct.address);
@@ -234,6 +235,7 @@ program
         const { env, keypair, wormhole_token_account, canonical_token_account } = options;
         let { amount } = options;
         const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { payer } = wallet;
         const canSwap = await canonicalSwapProgram(provider);
 
 
@@ -246,8 +248,8 @@ program
         //convert to decimal units
         destAmount = destAmount.mul(ten.pow(decimals))
 
-        const wormholeToken = new Token(connection, wormholeMint, TOKEN_PROGRAM_ID, wallet.payer)
-        const canonicalToken = new Token(connection, canonicalMint, TOKEN_PROGRAM_ID, wallet.payer)
+        const wormholeToken = new Token(connection, new PublicKey(wormholeMint), TOKEN_PROGRAM_ID, payer)
+        const canonicalToken = new Token(connection, new PublicKey(canonicalMint), TOKEN_PROGRAM_ID, payer)
 
         const { decimals: canDec } = await canonicalToken.getMintInfo()
 
@@ -309,6 +311,7 @@ program
         const { keypair, wormhole_token_account, canonical_token_account } = options;
         let { amount } = options;
         const { provider, wallet, connection } = getProvider(keypair, 'mainnet-beta')
+        const { payer } = wallet;
         const canSwap = await canonicalSwapProgram(provider);
 
 
@@ -323,8 +326,8 @@ program
 
         //decimals of destination-
 
-        const wormholeToken = new Token(connection, wormholeMint, TOKEN_PROGRAM_ID, wallet.payer)
-        const canonicalToken = new Token(connection, canonicalMint, TOKEN_PROGRAM_ID, wallet.payer)
+        const wormholeToken = new Token(connection, new PublicKey(wormholeMint), TOKEN_PROGRAM_ID, payer)
+        const canonicalToken = new Token(connection, new PublicKey(canonicalMint), TOKEN_PROGRAM_ID, payer)
 
         const { decimals: wormDec } = await wormholeToken.getMintInfo()
 
@@ -431,7 +434,7 @@ program
         })
 
         const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId, payer);
-        const poolToken = new Token(connection, data.poolToken, TOKEN_PROGRAM_ID, payer)
+        const poolToken = new Token(connection, new PublicKey(data.poolToken), TOKEN_PROGRAM_ID, payer)
         const feeAccount = data.feeAccount;
         const tokenATokenAccount = data.tokenAccountA;
         const tokenBTokenAccount = data.tokenAccountB;
@@ -479,8 +482,8 @@ program
 
         const tokenSwapInfo = new PublicKey(swap);
 
-        const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, keypair);
-        const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, keypair);
+        const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, payer);
+        const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, payer);
 
         const [SwapAuthorityPDA] =
             await PublicKey.findProgramAddress(

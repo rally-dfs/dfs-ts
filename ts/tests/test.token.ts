@@ -19,6 +19,7 @@ describe('spl token', () => {
         const walletKeyPair = Keypair.generate();
         connection = new Connection(clusterApiUrl("devnet"))
         wallet = new NodeWallet(walletKeyPair)
+        console.log(walletKeyPair)
         await connection.confirmTransaction(await connection.requestAirdrop(wallet.publicKey, LAMPORTS_PER_SOL))
     })
 
@@ -42,6 +43,8 @@ describe('spl token', () => {
     it('should add metadata to an existing fungible token mint', async () => {
 
         const { payer } = wallet;
+
+        console.log(payer.publicKey.toBase58())
 
         const tokenMint = await Token.createMint(
             connection,
