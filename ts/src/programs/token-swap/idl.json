@@ -1,6 +1,6 @@
 {
     "version": "0.0.0",
-    "name": "anchor_token_swap",
+    "name": "token_bonding_curve",
     "instructions": [
         {
             "name": "initializeConstantPrice",
