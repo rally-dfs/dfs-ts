@@ -69,7 +69,7 @@ describe('token swap', () => {
 
     it('it should get an instance of the token swap program', async () => {
 
-        const programName = 'anchor_token_swap'
+        const programName = 'token_bonding_curve';
         const { idl } = await tokenSwapProgram(provider);
         assert.strictEqual(idl.name, programName);
 
