@@ -14,10 +14,12 @@ import {
     swapWrappedForCanonical,
     swapCanonicalForWrapped,
     initializeLinearPriceCurve,
+    estimateSwap,
     executeSwap,
     tokenSwapProgram,
-    getTokenSwapInfo
+    getTokenSwapInfo,
 } from 'dfs-js';
+
 
 import { loadKeypair, getProvider, getOrCreateAssociatedAccount } from "./utils/utils"
 
@@ -134,6 +136,7 @@ program
         })
 
         console.log(`metadata successfully added to ${mint}`)
+        console.log(`tx hash = ${tx}`)
 
     });
 
@@ -155,11 +158,13 @@ program
 
         // connect to cluster and load wallet
         const connection = new Connection(clusterApiUrl(env))
-        const mintInfo = await getMintInfo({ tokenMint: mint, connection })
-        const data = await getMetadata({ tokenMint: mint, connection })
-        console.log({ ...mintInfo, ...data })
+        const mintInfo = await getMintInfo({ tokenMint: new PublicKey(mint), connection })
+        const data = await getMetadata({ tokenMint: new PublicKey(mint), connection })
+        console.log("mint authority = ", mintInfo.mintAuthority.toBase58());
+        console.log("supply = ", mintInfo.supply.toNumber());
+        console.log("name = ", data.name);
+        console.log("symbol = ", data.symbol);
     });
-
 
 
 program
@@ -213,9 +218,14 @@ program
 
 program
     .command('swap-canonical-wormhole')
-    .option(
+    .requiredOption(
         '-a, --amount <string>',
         'amount',
+    )
+    .requiredOption(
+        '-k, --keypair <path>',
+        `Solana wallet location`,
+        '--keypair not provided',
     )
     .option(
         '-w, --wormhole_token_account <string>',
@@ -224,11 +234,6 @@ program
     .option(
         '-c, --canonical_token_account <string>',
         'destination account (if not included uses associated token acct)',
-    )
-    .requiredOption(
-        '-k, --keypair <path>',
-        `Solana wallet location`,
-        '--keypair not provided',
     )
     .action(async options => {
 
@@ -282,7 +287,7 @@ program
 
         await connection.confirmTransaction(tx)
 
-        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()}`)
+        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${canonicalMint} swapped for ${wormholeMint} sent to ${wormholeTokenAccount.toBase58()} `)
 
     });
 
@@ -340,7 +345,7 @@ program
         const balance = wormBalance.div(ten.pow(new BN(wormDec))).toNumber();
 
         if (balance < Number(amount)) {
-            return console.log(`insufficent funds, your wormhole $RLY balance is currently ${balance}`)
+            return console.log(`insufficent funds, your wormhole $RLY balance is currently ${balance} `)
         }
 
         const tx = await swapWrappedForCanonical({
@@ -359,7 +364,7 @@ program
 
         await connection.confirmTransaction(tx)
 
-        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${wormholeMint} swapped for ${canonicalMint} sent to ${canonicalTokenAccount.toBase58()}`)
+        console.log(`${destAmount.div(ten.pow(decimals)).toNumber()} of ${wormholeMint} swapped for ${canonicalMint} sent to ${canonicalTokenAccount.toBase58()} `)
 
     });
 
@@ -448,6 +453,72 @@ program
         console.log('fee account public key', feeAccount.toBase58());
         console.log('initial pool token deposit token account', destinationAccount.toBase58());
 
+    });
+
+
+program
+    .command('tbc-swap-estimate')
+    .argument('<swap>', 'swap')
+    .argument('<token_a>', 'token A')
+    .argument('<token_b>', 'token B')
+    .argument('<amount>', 'amount of token a to swap')
+    .option(
+        '-e, --env <string>',
+        'Solana cluster env name',
+        'devnet',
+    )
+    .requiredOption(
+        '-k, --keypair <path>',
+        `Solana wallet location`,
+        '--keypair not provided',
+    )
+    .action(async (swap, token_a, token_b, amount, options) => {
+
+        const { env, keypair, } = options;
+
+
+        const { provider, wallet, connection } = getProvider(keypair, env)
+        const { payer } = wallet;
+        const tokenSwap = await tokenSwapProgram(provider);
+
+        const tokenAAmount = new BN(amount);
+        const amountOut = new BN(0)
+
+
+        const tokenSwapInfo = new PublicKey(swap);
+
+        const tokenA = new Token(connection, new PublicKey(token_a), TOKEN_PROGRAM_ID, payer);
+        const tokenB = new Token(connection, new PublicKey(token_b), TOKEN_PROGRAM_ID, payer);
+
+        const [SwapAuthorityPDA] =
+            await PublicKey.findProgramAddress(
+                [tokenSwapInfo.toBuffer()],
+                tokenSwap.programId
+            );
+
+        const swapData = await getTokenSwapInfo(provider, tokenSwapInfo, tokenSwap.programId, payer);
+
+        const callerTokenAAccount = await getOrCreateAssociatedAccount(tokenA, payer.publicKey);
+        const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
+
+        const { amountTokenAPostSwap, amountTokenBPostSwap } = await estimateSwap({
+            tokenSwap,
+            tokenSwapInfo,
+            amountIn: tokenAAmount,
+            amountOut,
+            userTransferAuthority: payer.publicKey,
+            userSourceTokenAccount: callerTokenAAccount,
+            userDestinationTokenAccount: callerTokenBAccount,
+            swapSourceTokenAccount: swapData.tokenAccountA,
+            swapDestinationTokenAccount: swapData.tokenAccountB,
+            poolMintAccount: swapData.poolToken,
+            poolFeeAccount: swapData.feeAccount,
+            wallet,
+            connection
+        })
+
+        console.log(`estimated amount token A = ${amountTokenAPostSwap}`);
+        console.log(`estimated amount token B = ${amountTokenBPostSwap}`);
     });
 
 
