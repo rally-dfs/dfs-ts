@@ -1,7 +1,7 @@
 
 # DFS CLI 
 
-DFS CLI allows you to setup fungilble SPL tokens and call Rally token programs from the command line. 
+DFS CLI allows you to setup fungilble SPL tokens and call RLY token programs from the command line. 
 
 ## installation 
 
@@ -79,9 +79,9 @@ Options:
   -k, --keypair <path>  Solana wallet location (default: "--keypair not provided")
   -h, --help            display help for command
   ```
-## Get Canonical $RLY Token Balance
+## Get Canonical sRLY (Rally (Solana)) Token Balance
 
-This command will only work on mainnet-beta as it queries the token mint for canonical $RLY on mainnet-beta. This command looks for the canonical rally associated token account for the specified keypair and returns the balance. 
+This command will only work on mainnet-beta as it queries the token mint for sRLY on mainnet-beta. This command looks for the canonical sRLY associated token account for the specified keypair and returns the balance. 
 
 TODO: allow user to specify address to lookup, rather than just the associated token account
 
@@ -95,9 +95,9 @@ Options:
   -h, --help            display help for command
 ```
 
-## Get wormhole $RLY Token Balance
+## Get RLY (Wormhole) Token Balance
 
-This command will only work on mainnet-beta as it queries the token mint for wormhole $RLY (v2) on mainnet-beta. This command looks for the canonical rally associated token account for the specified keypair and returns the balance. 
+This command will only work on mainnet-beta as it queries the token mint for RLY (Wormhole) on mainnet-beta. This command looks for the RLY (Wormhole) associated token account for the specified keypair and returns the balance. This command only works for Wormhole V2 of RLY (Wormhole). 
 
 TODO: allow user to specify address to lookup, rather than just the associated token account
 
@@ -112,9 +112,9 @@ Options:
 ```
 
 
-## Swap wormhole $RLY for canonical $RLY
+## Swap RLY (Wormhole) for canonical sRLY
 
-This command will only work on mainnet-beta as it swaps between the wormhole and canonical rally token mints on mainnet beta. This allows you to specify an amount to swap and optionally can specify a canonical token account and a wormhole token account, if the token accounts are not specified the associated token accounts with the specified keypairs will be used.
+This command will only work on mainnet-beta as it swaps between the RLY (Wormhole) and canonical sRLY token mints on mainnet beta. This allows you to specify an amount to swap and optionally can specify a canonical sRLY token account and a RLY (Wormhole) token account, if the token accounts are not specified the associated token accounts with the specified keypairs will be used.
 
 ` dfs-cli swap-wormhole-canonical`
 
@@ -129,9 +129,9 @@ Options:
   -h, --help                              display help for command
 ```
 
-## Swap canonical $RLY for wormhole $RLY
+## Swap canonical sRLY for RLY (Wormhole)
 
-This command will only work on mainnet-beta as it swaps between the wormhole and canonical rally token mints on mainnet beta. This allows you to specify an amount to swap and optionally can specify a canonical token account and a wormhole token account, if the token accounts are not specified the associated token accounts with the specified keypairs will be used.
+This command will only work on mainnet-beta as it swaps between the RLY (Wormhole) and canonical sRLY token mints on mainnet beta. This allows you to specify an amount to swap and optionally can specify a canonical sRLY token account and a RLY (Wormhole) token account, if the token accounts are not specified the associated token accounts with the specified keypairs will be used.
 
 ` dfs-cli swap-canonical-wormhole`
 
