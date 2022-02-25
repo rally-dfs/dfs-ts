@@ -1,9 +1,10 @@
 
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Program, web3, BN } from '@project-serum/anchor';
+import { Program, web3, BN, Provider } from '@project-serum/anchor';
 import { NodeWallet } from '@metaplex/js';
 import { config } from "../../../config";
 const { pda: { CANONICAL_MINT_AUTHORITY_PDA_SEED, TOKEN_ACCOUNT_PDA_SEED } } = config;
+const { Transaction } = web3;
 
 interface swapWrappedForCanonicalParams {
     canSwap: Program;
@@ -14,7 +15,8 @@ interface swapWrappedForCanonicalParams {
     sourceTokenAccount: web3.PublicKey,
     destinationTokenAccount: web3.PublicKey,
     destinationAmount: BN,
-    wallet: NodeWallet
+    wallet: NodeWallet,
+    connection: any
 }
 
 export const swapWrappedForCanonical = async ({
@@ -26,10 +28,12 @@ export const swapWrappedForCanonical = async ({
     sourceTokenAccount,
     destinationTokenAccount,
     destinationAmount,
-    wallet
+    wallet,
+    connection
 } = {} as swapWrappedForCanonicalParams) => {
 
-    const { payer } = wallet;
+    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
+    const transaction = new Transaction();
 
     const [expectedMintAuthorityPDA, expectedMintAuthorityBump] =
         await web3.PublicKey.findProgramAddress(
@@ -42,7 +46,7 @@ export const swapWrappedForCanonical = async ({
         canSwap.programId
     );
 
-    return canSwap.rpc.swapWrappedForCanonical(
+    const ix = canSwap.instruction.swapWrappedForCanonical(
         destinationAmount,
         expectedMintAuthorityBump,
         {
@@ -56,10 +60,12 @@ export const swapWrappedForCanonical = async ({
                 canonicalData: canonicalData,
                 wrappedData: wrappedData,
                 tokenProgram: TOKEN_PROGRAM_ID,
-            },
-            signers: [payer],
+            }
         }
     );
+
+    transaction.add(ix)
+    return provider.send(transaction, [])
 
 }
 

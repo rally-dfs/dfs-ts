@@ -1,7 +1,7 @@
-import { web3, BN } from "@project-serum/anchor"
+import { web3, BN, Provider } from "@project-serum/anchor"
 import assert from 'assert';
-import { NodeWallet } from "@metaplex/js";
 import { Token, TOKEN_PROGRAM_ID, u64 } from '@solana/spl-token';
+import { NodeWallet } from "@metaplex/js";
 import { addMetadata, createToken, getMetadata } from "../src"
 const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL } = web3;
 
@@ -33,7 +33,7 @@ describe('spl token', () => {
         })
 
         await connection.confirmTransaction(tx)
-        const data = await getMetadata({ tokenMint: tokenMint.publicKey, connection })
+        const data = await getMetadata({ tokenMint, connection })
         assert.strictEqual(data.name, name);
         assert.strictEqual(data.symbol, symbol);
 

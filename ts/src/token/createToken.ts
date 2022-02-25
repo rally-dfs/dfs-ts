@@ -1,17 +1,17 @@
-import { Token, TOKEN_PROGRAM_ID, u64 } from '@solana/spl-token';
-import { actions, NodeWallet } from '@metaplex/js';
-const { createMetadata } = actions;
-import { MetadataDataData } from '@metaplex-foundation/mpl-token-metadata';
+import { Token, TOKEN_PROGRAM_ID, u64, MintLayout, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Wallet } from '@metaplex/js';
+import { MetadataDataData, Metadata, CreateMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { TokenData } from '../types';
-import { BN } from "@project-serum/anchor";
-
+import { BN, web3, Provider } from "@project-serum/anchor";
+import { generateTokenMintInstructions } from '../utils';
+const { Keypair, SystemProgram, Transaction, sendAndConfirmRawTransaction } = web3;
 
 
 interface createTokenParams {
     initialSupply: BN;
     tokenData: TokenData;
     connection: any;
-    wallet: NodeWallet;
+    wallet: Wallet;
 }
 
 
@@ -20,32 +20,33 @@ export const createToken = async ({ initialSupply, tokenData, connection, wallet
 
     // get keypair from provider wallet
 
-    const { payer } = wallet;
-
     // create token mint 
 
-    const tokenMint = await Token.createMint(
+    /*const tokenMint = await Token.createMint(
         connection,
-        payer,
-        payer.publicKey,
+        wallet,
+        wallet.publicKey,
         null,
         tokenData.decimals,
         TOKEN_PROGRAM_ID
-    );
+    );*/
 
-    //create token account
+    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
+    const transaction = new Transaction();
 
-    const tokenAccount = await tokenMint.createAssociatedTokenAccount(wallet.publicKey);
 
+    // create mint
+
+    const { tokenIx, tokenMint } = await generateTokenMintInstructions(connection, wallet, wallet.publicKey, wallet.publicKey, 8)
+
+    // create associated account to receive tokens
+
+    const tokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, tokenMint.publicKey, wallet.publicKey)
+    const associatedAcctIx = await Token.createAssociatedTokenAccountInstruction(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, tokenMint.publicKey, tokenAccount, wallet.publicKey, wallet.publicKey)
 
     // send initial supply to token account
 
-    await tokenMint.mintTo(
-        tokenAccount,
-        wallet.publicKey,
-        [],
-        new u64(initialSupply.toString())
-    )
+    const mintToIx = await Token.createMintToInstruction(TOKEN_PROGRAM_ID, tokenMint.publicKey, tokenAccount, wallet.publicKey, [], new u64(initialSupply.toString()))
 
     // create metadata obj
 
@@ -58,20 +59,32 @@ export const createToken = async ({ initialSupply, tokenData, connection, wallet
         creators: null,
     });
 
+    // get metadata PDA
 
-    // create metadata
-    const tx = await createMetadata(
+
+    const metadata = await Metadata.getPDA(tokenMint.publicKey)
+
+    // create metadata Tx
+
+    const createMetadataTx = new CreateMetadata(
+        { feePayer: wallet.publicKey },
         {
-            connection,
-            wallet,
-            editionMint: tokenMint.publicKey,
+            metadata,
             metadataData,
-            updateAuthority: payer.publicKey
-        }
-    )
+            updateAuthority: wallet.publicKey,
+            mint: tokenMint.publicKey,
+            mintAuthority: wallet.publicKey,
+        },
+    );
 
     // return tx hash, token mint, token account 
 
-    return { tx, tokenMint, tokenAccount }
+    transaction.add(...tokenIx, associatedAcctIx, mintToIx, createMetadataTx)
+
+    const tx = await provider.send(transaction, [tokenMint])
+
+    return { tx, tokenMint: tokenMint.publicKey, tokenAccount }
+
+
 }
 

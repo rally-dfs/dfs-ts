@@ -9,6 +9,7 @@ import {
 import { web3, Provider, BN } from "@project-serum/anchor"
 import assert from 'assert';
 import { NodeWallet } from "@metaplex/js";
+import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 const { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, } = web3;
 
 
@@ -18,7 +19,9 @@ describe('canonical swap', () => {
     let provider;
     let wallet;
     let connection;
+    let txSig;
     let canonicalMint;
+    let tokenMint;
     let canonicalData;
     let canonicalTokenAccount;
     let wrappedMint;
@@ -50,16 +53,32 @@ describe('canonical swap', () => {
     it('it should initialize a canonical token', async () => {
 
         const canSwap = await canonicalSwapProgram(provider);
-        ({ tokenMint: canonicalMint, tokenAccount: canonicalTokenAccount } = await createToken({ initialSupply: initialCanSupply, tokenData: { name, symbol, decimals }, connection, wallet }));
-        const tx = await initializeCanonicalToken({ canSwap, canonicalMint: canonicalMint.publicKey, canonicalData, canonicalAuthority: wallet.payer });
+        ({ tx: txSig, tokenMint: canonicalMint, tokenAccount: canonicalTokenAccount } = await createToken({ initialSupply: initialCanSupply, tokenData: { name, symbol, decimals }, connection, wallet }));
+
+        await connection.confirmTransaction(txSig)
+
+        canonicalMint = new Token(connection, canonicalMint, TOKEN_PROGRAM_ID, wallet)
+
+        await initializeCanonicalToken({
+            canSwap,
+            canonicalMint: canonicalMint.publicKey,
+            canonicalData,
+            canonicalAuthority: wallet.publicKey,
+            connection,
+            wallet
+        });
 
     })
 
     it('it should initialize a wrapped token', async () => {
 
         const canSwap = await canonicalSwapProgram(provider);
-        ({ tokenMint: wrappedMint, tokenAccount: wrappedTokenAccount } = await createToken({ initialSupply: initalWrappedSupply, tokenData: { name, symbol, decimals }, connection, wallet }));
-        const tx = await initializeWrappedToken({ canSwap, wrappedMint: wrappedMint.publicKey, wrappedData, canonicalMint: canonicalMint.publicKey, canonicalData: canonicalData.publicKey, canonicalAuthority: wallet.payer });
+        ({ tx: txSig, tokenMint: wrappedMint, tokenAccount: wrappedTokenAccount } = await createToken({ initialSupply: initalWrappedSupply, tokenData: { name, symbol, decimals }, connection, wallet }));
+        await connection.confirmTransaction(txSig)
+
+        wrappedMint = new Token(connection, wrappedMint, TOKEN_PROGRAM_ID, wallet)
+
+        await initializeWrappedToken({ canSwap, wrappedMint: wrappedMint.publicKey, wrappedData, canonicalMint: canonicalMint.publicKey, canonicalData: canonicalData.publicKey, canonicalAuthority: wallet.payer, connection, wallet });
 
     })
 
@@ -76,8 +95,11 @@ describe('canonical swap', () => {
             sourceTokenAccount: wrappedTokenAccount,
             destinationTokenAccount: canonicalTokenAccount,
             destinationAmount: new BN(100),
-            wallet
+            wallet,
+            connection
         })
+
+        await connection.confirmTransaction(tx)
 
         const destAccountInfo = await canonicalMint.getAccountInfo(canonicalTokenAccount)
         assert.ok(destAccountInfo.amount.eq(new BN(100)));
@@ -98,8 +120,11 @@ describe('canonical swap', () => {
             sourceTokenAccount: canonicalTokenAccount,
             destinationTokenAccount: wrappedTokenAccount,
             destinationAmount: new BN(100),
-            wallet
+            wallet,
+            connection
         })
+
+        await connection.confirmTransaction(tx);
 
         const destAccountInfo = await canonicalMint.getAccountInfo(canonicalTokenAccount)
         assert.ok(destAccountInfo.amount.eq(new BN(0)));

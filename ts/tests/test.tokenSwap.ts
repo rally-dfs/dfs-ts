@@ -27,7 +27,7 @@ describe('token swap', () => {
     let tokenBTokenAccount;
     let callerTokenAAccount;
     let callerTokenBAccount;
-    const initialTokenBLiquidity = new BN(500 * 10 ** 8);
+    const initialTokenBLiquidity = new BN(200 * 10 ** 8);
     const initialTokenALiquidity = new BN(10000 * 10 ** 8);
     const swapInitAmountTokenA = new BN(2400 * 10 ** 8);
     const decimals = 8
@@ -82,12 +82,12 @@ describe('token swap', () => {
 
         slopeNumerator = new BN(1);
         slopeDenominator = new BN(200000000);
-        initialTokenAPriceNumerator = new BN(50);
-        initialTokenAPriceDenominator = new BN(1);
+        initialTokenAPriceNumerator = new BN(150);
+        initialTokenAPriceDenominator = new BN(3);
 
         const tokenSwap = await tokenSwapProgram(provider);
 
-        const { destinationAccount } = await initializeLinearPriceCurve({
+        const { tx, destinationAccount } = await initializeLinearPriceCurve({
             tokenSwap,
             slopeNumerator,
             slopeDenominator,
@@ -95,21 +95,22 @@ describe('token swap', () => {
             initialTokenAPriceDenominator,
             callerTokenBAccount,
             tokenSwapInfo,
-            tokenA,
-            tokenB,
+            tokenA: tokenA.publicKey,
+            tokenB: tokenB.publicKey,
             wallet,
-            provider,
+            connection,
             initialTokenBLiquidity
         })
 
+        await connection.confirmTransaction(tx);
 
-        const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId, payer);
+        const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId);
         poolToken = new Token(connection, data.poolToken, TOKEN_PROGRAM_ID, payer)
         feeAccount = data.feeAccount;
         tokenATokenAccount = data.tokenAccountA;
         tokenBTokenAccount = data.tokenAccountB;
         const { amount: feeAmount } = await poolToken.getAccountInfo(feeAccount);
-        const { amount: destinationAmount } = await poolToken.getAccountInfo(destinationAccount)
+        const { amount: destinationAmount } = await poolToken.getAccountInfo(destinationAccount.publicKey)
 
         assert.ok(feeAmount.eq(new BN(0)));
         assert.ok(destinationAmount.eq(new BN(10 * 10 ** 8)));
@@ -122,14 +123,13 @@ describe('token swap', () => {
 
         const tokenSwap = await tokenSwapProgram(provider);
         const amountOut = new BN(0)
-        const { payer } = wallet
 
         const { amountTokenAPostSwap, amountTokenBPostSwap } = await estimateSwap({
             tokenSwap,
             tokenSwapInfo: tokenSwapInfo.publicKey,
             amountIn: swapInitAmountTokenA,
             amountOut,
-            userTransferAuthority: payer.publicKey,
+            userTransferAuthority: wallet.publicKey,
             userSourceTokenAccount: callerTokenAAccount,
             userDestinationTokenAccount: callerTokenBAccount,
             swapSourceTokenAccount: tokenATokenAccount,
@@ -149,23 +149,24 @@ describe('token swap', () => {
 
         const tokenSwap = await tokenSwapProgram(provider);
         const amountOut = new BN(0)
-        const { payer } = wallet
 
-
-        await executeSwap({
+        const tx = await executeSwap({
             tokenSwap,
             tokenSwapInfo: tokenSwapInfo.publicKey,
             amountIn: swapInitAmountTokenA,
             amountOut,
-            userTransferAuthority: payer.publicKey,
+            userTransferAuthority: wallet.publicKey,
             userSourceTokenAccount: callerTokenAAccount,
             userDestinationTokenAccount: callerTokenBAccount,
             swapSourceTokenAccount: tokenATokenAccount,
             swapDestinationTokenAccount: tokenBTokenAccount,
             poolMintAccount: poolToken.publicKey,
             poolFeeAccount: feeAccount,
-            wallet
+            wallet,
+            connection
         })
+
+        await connection.confirmTransaction(tx)
 
         const usertokenAInfo = await tokenA.getAccountInfo(callerTokenAAccount);
         const usertokenBInfo = await tokenB.getAccountInfo(callerTokenBAccount);
@@ -175,7 +176,7 @@ describe('token swap', () => {
         assert.ok(usertokenAInfo.amount.eq(new BN(760000000000)));
         assert.ok(swapTokenAInfo.amount.eq(new BN(240000000000)));
         assert.ok(usertokenBInfo.amount.eq(new BN(4000000000)));
-        assert.ok(swapTokenBInfo.amount.eq(new BN(46000000000)));
+        assert.ok(swapTokenBInfo.amount.eq(new BN(16000000000)));
     })
 
 })

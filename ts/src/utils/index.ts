@@ -1,8 +1,8 @@
 import { config } from "../../config"
 import { Program, web3, BN } from '@project-serum/anchor';
 import * as BufferLayout from "@solana/buffer-layout";
-import { u64, AccountLayout } from "@solana/spl-token";
-const { PublicKey } = web3;
+import { u64, AccountLayout, TOKEN_PROGRAM_ID, MintLayout, Token } from "@solana/spl-token";
+const { PublicKey, SystemProgram, Keypair } = web3;
 
 
 const { accountLayout: { SWAP_ACCOUNT_SPACE } } = config;
@@ -118,7 +118,7 @@ export const accountInfoFromSim = async (account) => {
 
 }
 
-export const getTokenSwapInfo = async (provider, swapInfoPubKey, programId, payer) => {
+export const getTokenSwapInfo = async (provider, swapInfoPubKey, programId) => {
 
     const data = await loadAccount(provider.connection, swapInfoPubKey, programId);
     const tokenSwapData = TokenSwapLayout.decode(data);
@@ -189,5 +189,108 @@ export const getTokenSwapInfo = async (provider, swapInfoPubKey, programId, paye
         hostFeeDenominator,
         curveType,
     }
+}
+
+export const generateTokenMintInstructions = async (connection, wallet, authority, freezeAuthority, decimals) => {
+
+    const tokenMint = Keypair.generate();
+    const balanceNeeded = await Token.getMinBalanceRentForExemptMint(connection);
+
+    return {
+        tokenMint,
+        tokenIx: [
+            SystemProgram.createAccount({
+                fromPubkey: wallet.publicKey,
+                newAccountPubkey: tokenMint.publicKey,
+                lamports: balanceNeeded,
+                space: MintLayout.span,
+                programId: TOKEN_PROGRAM_ID
+            }),
+            Token.createInitMintInstruction(
+                TOKEN_PROGRAM_ID,
+                tokenMint.publicKey,
+                decimals,
+                authority,
+                freezeAuthority
+            )
+        ]
+    }
+}
+
+export const generateCreateTokenAccountInstructions = async (connection, wallet, mint, owner) => {
+
+    const tokenAccount = Keypair.generate();
+    const balanceNeeded = await Token.getMinBalanceRentForExemptAccount(connection);
+
+    return {
+        tokenAccount,
+        accountIx: [
+            SystemProgram.createAccount({
+                fromPubkey: wallet.publicKey,
+                newAccountPubkey: tokenAccount.publicKey,
+                lamports: balanceNeeded,
+                space: AccountLayout.span,
+                programId: TOKEN_PROGRAM_ID
+            }),
+            Token.createInitAccountInstruction(
+                TOKEN_PROGRAM_ID,
+                mint,
+                tokenAccount.publicKey,
+                owner
+            )
+        ]
+    }
+}
+
+export const simulateTransaction = async (tx, wallet, connection, opts, includeAccounts) => {
+
+
+    tx.feePayer = wallet.publicKey;
+    tx.recentBlockhash = (
+        await connection.getRecentBlockhash(
+            opts.preflightCommitment
+        )
+    ).blockhash;
+
+    await wallet.signTransaction(tx);
+
+    // @ts-ignore
+    tx.recentBlockhash = await connection._recentBlockhash(
+        // @ts-ignore
+        connection._disableBlockhashCaching
+    );
+
+    const commitment = opts.commitment ?? "processed";
+
+    const message = tx._compile();
+    const signData = tx.serializeMessage();
+    // @ts-ignore
+    const wireTransaction = tx._serialize(signData);
+    const encodedTransaction = wireTransaction.toString("base64");
+    const config: any = { encoding: "base64", commitment };
+
+
+    if (includeAccounts) {
+        const addresses = (
+            Array.isArray(includeAccounts)
+                ? includeAccounts
+                : message.nonProgramIds()
+        ).map(key => key.toBase58());
+
+        config['accounts'] = {
+            encoding: 'base64',
+            addresses,
+        };
+    }
+
+    const args = [encodedTransaction, config];
+
+    // @ts-ignore
+    const res = await connection._rpcRequest("simulateTransaction", args);
+    if (res.error) {
+        throw new Error("failed to simulate transaction: " + res.error.message);
+    }
+    return res.result;
+
 }
 

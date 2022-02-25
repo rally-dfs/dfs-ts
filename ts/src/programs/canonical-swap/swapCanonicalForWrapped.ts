@@ -1,9 +1,9 @@
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Program, web3, BN } from '@project-serum/anchor';
+import { Program, web3, BN, Provider } from '@project-serum/anchor';
 import { config } from "../../../config";
-import { NodeWallet } from '@metaplex/js';
+import { Wallet } from '@metaplex/js';
 const { pda: { WRAPPED_TOKEN_OWNER_AUTHORITY_PDA_SEED, TOKEN_ACCOUNT_PDA_SEED, CANONICAL_MINT_AUTHORITY_PDA_SEED } } = config;
-const { PublicKey, SystemProgram: { programId } } = web3;
+const { PublicKey, SystemProgram: { programId }, Transaction } = web3;
 
 interface swapCanonicalForWrappedParams {
     canSwap: Program;
@@ -14,7 +14,8 @@ interface swapCanonicalForWrappedParams {
     sourceTokenAccount: web3.PublicKey,
     destinationTokenAccount: web3.PublicKey,
     destinationAmount: BN,
-    wallet: NodeWallet
+    wallet: Wallet,
+    connection: any
 
 }
 
@@ -27,9 +28,13 @@ export const swapCanonicalForWrapped = async ({
     sourceTokenAccount,
     destinationTokenAccount,
     destinationAmount,
-    wallet
+    wallet,
+    connection
 
 } = {} as swapCanonicalForWrappedParams) => {
+
+    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
+    const transaction = new Transaction();
 
     const [wrappedTokenAccount] = await PublicKey.findProgramAddress(
         [TOKEN_ACCOUNT_PDA_SEED, canonicalMint.toBuffer(), wrappedMint.toBuffer()],
@@ -46,7 +51,9 @@ export const swapCanonicalForWrapped = async ({
             canSwap.programId
         );
 
-    return canSwap.rpc.swapCanonicalForWrapped(
+
+
+    const ix = canSwap.instruction.swapCanonicalForWrapped(
         destinationAmount,
         wrappedTokenAccountAuthorityBump,
         {
@@ -61,8 +68,12 @@ export const swapCanonicalForWrapped = async ({
                 wrappedData: wrappedData,
                 tokenProgram: TOKEN_PROGRAM_ID,
             },
-            signers: [wallet.payer],
         }
-    );
+
+    )
+
+    transaction.add(ix)
+    return provider.send(transaction, [])
+
 
 }

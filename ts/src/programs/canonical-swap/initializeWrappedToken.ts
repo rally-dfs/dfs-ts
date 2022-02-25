@@ -1,12 +1,13 @@
 import { AccountLayout, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Program, web3, } from '@project-serum/anchor';
+import { Program, web3, Provider } from '@project-serum/anchor';
 import { config } from "../../../config";
+import { Wallet } from '@metaplex/js';
 const {
     pda: { WRAPPED_TOKEN_OWNER_AUTHORITY_PDA_SEED, TOKEN_ACCOUNT_PDA_SEED },
     accountLayout: { WRAPPED_DATA_SPACE }
 
 } = config;
-const { PublicKey, SystemProgram: { programId } } = web3;
+const { PublicKey, SystemProgram: { programId }, Transaction } = web3;
 
 interface initializeWrappedTokenParams {
     canSwap: Program;
@@ -14,7 +15,10 @@ interface initializeWrappedTokenParams {
     wrappedData: any;
     canonicalMint: web3.PublicKey;
     canonicalData: web3.PublicKey;
-    canonicalAuthority: any
+    canonicalAuthority: any,
+    connection: any
+    wallet: Wallet,
+
 }
 
 export const initializeWrappedToken = async ({
@@ -23,8 +27,13 @@ export const initializeWrappedToken = async ({
     wrappedData,
     canonicalMint,
     canonicalData,
-    canonicalAuthority
+    canonicalAuthority,
+    connection,
+    wallet,
 } = {} as initializeWrappedTokenParams) => {
+
+    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
+    const transaction = new Transaction();
 
     const [wrappedTokenAccount, wrappedTokenAccountBump] =
         await PublicKey.findProgramAddress(
@@ -42,7 +51,12 @@ export const initializeWrappedToken = async ({
             canSwap.programId
         );
 
-    return await canSwap.rpc.initializeWrappedToken(
+    const wrappedDataIx = await canSwap.account.wrappedData.createInstruction(
+        wrappedData,
+        WRAPPED_DATA_SPACE
+    )
+
+    const initIx = await canSwap.instruction.initializeWrappedToken(
         wrappedTokenAccountBump,
         wrappedTokenAccountAuthorityBump,
         {
@@ -56,15 +70,11 @@ export const initializeWrappedToken = async ({
                 tokenProgram: TOKEN_PROGRAM_ID,
                 rent: web3.SYSVAR_RENT_PUBKEY,
                 systemProgram: programId,
-            },
-            instructions: [
-                await canSwap.account.wrappedData.createInstruction(
-                    wrappedData,
-                    WRAPPED_DATA_SPACE
-                ),
-            ],
-            signers: [wrappedData, canonicalAuthority],
+            }
         }
     );
+
+    transaction.add(wrappedDataIx, initIx);
+    return provider.send(transaction, [wrappedData])
 
 }

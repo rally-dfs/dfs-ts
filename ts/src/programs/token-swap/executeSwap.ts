@@ -1,8 +1,8 @@
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Program, web3, BN } from '@project-serum/anchor';
+import { Program, web3, BN, Provider } from '@project-serum/anchor';
 import { NodeWallet } from '@metaplex/js';
 
-const { PublicKey, SystemProgram: { programId } } = web3;
+const { PublicKey, SystemProgram: { programId }, Transaction } = web3;
 
 interface executeSwapParams {
     tokenSwap: Program;
@@ -17,6 +17,7 @@ interface executeSwapParams {
     poolMintAccount: web3.PublicKey;
     poolFeeAccount: web3.PublicKey;
     wallet: NodeWallet;
+    connection: web3.Connection
 }
 
 export const executeSwap = async ({
@@ -31,11 +32,14 @@ export const executeSwap = async ({
     swapDestinationTokenAccount,
     poolMintAccount,
     poolFeeAccount,
-    wallet
+    wallet,
+    connection
 
 } = {} as executeSwapParams) => {
 
-    const { payer } = wallet;
+    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
+    const transaction = new Transaction();
+
 
     // get exepcted swap authority PDA
 
@@ -45,7 +49,7 @@ export const executeSwap = async ({
             tokenSwap.programId
         );
 
-    return tokenSwap.rpc.swap(
+    const ix = tokenSwap.instruction.swap(
         amountIn,
         amountOut,
         {
@@ -60,9 +64,11 @@ export const executeSwap = async ({
                 poolMint: poolMintAccount,
                 poolFee: poolFeeAccount,
                 tokenProgram: TOKEN_PROGRAM_ID,
-            },
-            signers: [payer]
+            }
         },
     )
+
+    transaction.add(ix);
+    return provider.send(transaction, [])
 
 }

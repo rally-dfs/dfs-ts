@@ -1,9 +1,11 @@
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Program, web3, BN } from '@project-serum/anchor';
-import { Connection, NodeWallet } from '@metaplex/js';
-import { accountInfoFromSim } from '../..';
+import { Program, web3, BN, Provider } from '@project-serum/anchor';
+import { Wallet } from '@metaplex/js';
+import { accountInfoFromSim, simulateTransaction } from '../..';
 
-const { PublicKey, SystemProgram: { programId } } = web3;
+
+const { PublicKey, SystemProgram: { programId }, Transaction } = web3;
+
 
 interface estimateSwapParams {
     tokenSwap: Program;
@@ -17,8 +19,8 @@ interface estimateSwapParams {
     swapDestinationTokenAccount: web3.PublicKey;
     poolMintAccount: web3.PublicKey;
     poolFeeAccount: web3.PublicKey;
-    wallet: NodeWallet;
-    connection: Connection;
+    wallet: Wallet;
+    connection: web3.Connection;
 }
 
 export const estimateSwap = async ({
@@ -38,8 +40,7 @@ export const estimateSwap = async ({
 
 } = {} as estimateSwapParams) => {
 
-    const { payer } = wallet;
-
+    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
     // get exepcted swap authority PDA
 
     const [expectedSwapAuthorityPDA] =
@@ -48,7 +49,7 @@ export const estimateSwap = async ({
             tokenSwap.programId
         );
 
-    const Ix = [await tokenSwap.instruction.swap(
+    const Ix = await tokenSwap.instruction.swap(
         amountIn,
         amountOut,
         {
@@ -65,12 +66,16 @@ export const estimateSwap = async ({
                 tokenProgram: TOKEN_PROGRAM_ID,
             }
         },
-    )]
+    )
 
-    const tx = new web3.Transaction();
-    tx.add(...Ix);
+    const tx = new Transaction();
+    tx.add(Ix);
+
+
     //simulate transaction return simulated state change for userSourceTokenAccount and userDestinationTokenAccount
-    const { value: { accounts } } = await connection.simulateTransaction(tx, [payer], [userSourceTokenAccount, userDestinationTokenAccount]);
+
+    const { value: { accounts } } = await simulateTransaction(tx, wallet, connection, { commitment: "confirmed", preflightCommitment: "processed" }, [userSourceTokenAccount, userDestinationTokenAccount]);
+
 
     const accountAInfo = await accountInfoFromSim(accounts[0])
     const accountBInfo = await accountInfoFromSim(accounts[1])

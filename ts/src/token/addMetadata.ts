@@ -1,8 +1,10 @@
 import { Token } from '@solana/spl-token';
 import { actions, NodeWallet } from '@metaplex/js';
 const { createMetadata } = actions;
-import { MetadataDataData } from '@metaplex-foundation/mpl-token-metadata';
+import { MetadataDataData, Metadata, CreateMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { TokenData } from '../types';
+import { Provider, web3 } from "@project-serum/anchor";
+const { Transaction } = web3;
 
 
 interface addMetadataParams {
@@ -14,7 +16,9 @@ interface addMetadataParams {
 
 export const addMetadata = async ({ tokenMint, tokenData, connection, wallet } = {} as addMetadataParams) => {
 
-    const { payer } = wallet;
+
+    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
+    const transaction = new Transaction();
 
     const metadataData = new MetadataDataData({
         name: tokenData.name,
@@ -24,15 +28,26 @@ export const addMetadata = async ({ tokenMint, tokenData, connection, wallet } =
         creators: null,
     });
 
-    // create metadata
+    // get metadata PDA
 
-    return createMetadata(
+
+    const metadata = await Metadata.getPDA(tokenMint.publicKey)
+
+    // create metadata Tx
+
+    const createMetadataTx = new CreateMetadata(
+        { feePayer: wallet.publicKey },
         {
-            connection,
-            wallet,
-            editionMint: tokenMint.publicKey,
+            metadata,
             metadataData,
-            updateAuthority: payer.publicKey
-        }
-    )
+            updateAuthority: wallet.publicKey,
+            mint: tokenMint.publicKey,
+            mintAuthority: wallet.publicKey,
+        },
+    );
+
+    transaction.add(createMetadataTx)
+
+    return provider.send(transaction, [])
+
 }
