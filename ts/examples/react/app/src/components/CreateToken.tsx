@@ -1,16 +1,18 @@
 
-import { FC, useCallback, useState } from 'react';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { FC, useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Button, Grid, TextField, Typography } from '@mui/material';
 import BN from 'bn.js';
 import { createToken } from "../../../../../build/src/index"
 import { Wallet } from '@metaplex/js';
+import { PublicKey } from '@solana/web3.js';
+import { EXPLORER_ROOT, NETWORK } from "../config";
 
 const CreateToken: FC = () => {
     const { connection } = useConnection();
 
     const wallet = useWallet() as Wallet;
+
 
     const defaultValues = {
         tokenName: "",
@@ -19,10 +21,17 @@ const CreateToken: FC = () => {
         initialSupply: 0
     };
 
+    type defaultTokenValuesType = {
+        tx: string | null,
+        tokenMint: PublicKey | null,
+        tokenAccount: PublicKey | null
+    }
 
+    const defaultTokenValues = {} as defaultTokenValuesType;
 
 
     const [formValues, setFormValues] = useState(defaultValues)
+    const [tokenValues, setTokenValues] = useState(defaultTokenValues)
 
     const handleInputChange = (e: any) => {
         const { name, value } = e.target;
@@ -35,29 +44,35 @@ const CreateToken: FC = () => {
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
-        const { tokenName, tokenSymbol, tokenDecimals, initialSupply } = formValues;
 
-        //convert init supply to decimal units
+        if (!wallet.publicKey) {
+            console.log("wallet not active")
+        } else {
+            const { tokenName, tokenSymbol, tokenDecimals, initialSupply } = formValues;
 
-        const ten = new BN(10)
-        const decimals = new BN(tokenDecimals)
-        let supply = new BN(initialSupply);
+            //convert init supply to decimal units
 
-        supply = supply.mul(ten.pow(decimals))
+            const ten = new BN(10)
+            const decimals = new BN(tokenDecimals)
+            let supply = new BN(initialSupply);
 
-        const result = await createToken({
-            initialSupply: supply,
-            tokenData: {
-                name: tokenName,
-                symbol: tokenSymbol,
-                decimals: tokenDecimals
-            },
-            connection,
-            wallet
-        })
+            supply = supply.mul(ten.pow(decimals))
 
-        console.log(result)
+            const result = await createToken({
+                initialSupply: supply,
+                tokenData: {
+                    name: tokenName,
+                    symbol: tokenSymbol,
+                    decimals: tokenDecimals
+                },
+                connection,
+                wallet
+            })
 
+            setTokenValues(result);
+            console.log(result)
+
+        }
     };
 
 
@@ -121,6 +136,17 @@ const CreateToken: FC = () => {
             <Button variant="contained" color="primary" type="submit">
                 Submit
             </Button>
+            {tokenValues.tx != null && (
+                <>
+                    <p>{`token successfully created`}</p>
+                    <p>tx id =<a href={`${EXPLORER_ROOT}/tx/${tokenValues.tx}?cluster=${NETWORK}`} target="_blank">{`${tokenValues.tx}`}</a></p>
+                    <p>token mint = <a href={`${EXPLORER_ROOT}/address/${tokenValues.tokenMint}?cluster=${NETWORK}`} target="_blank">{`${tokenValues.tokenMint}`}</a></p>
+                </>
+
+            )
+            }
+
+
         </form>
 
     );

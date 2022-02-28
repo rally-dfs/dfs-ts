@@ -1,10 +1,10 @@
-import { Token, TOKEN_PROGRAM_ID, u64, MintLayout, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Token, TOKEN_PROGRAM_ID, u64, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Wallet } from '@metaplex/js';
 import { MetadataDataData, Metadata, CreateMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { TokenData } from '../types';
 import { BN, web3, Provider } from "@project-serum/anchor";
 import { generateTokenMintInstructions } from '../utils';
-const { Keypair, SystemProgram, Transaction, sendAndConfirmRawTransaction } = web3;
+const { Transaction, } = web3;
 
 
 interface createTokenParams {
@@ -17,19 +17,7 @@ interface createTokenParams {
 
 export const createToken = async ({ initialSupply, tokenData, connection, wallet } = {} as createTokenParams) => {
 
-
-    // get keypair from provider wallet
-
     // create token mint 
-
-    /*const tokenMint = await Token.createMint(
-        connection,
-        wallet,
-        wallet.publicKey,
-        null,
-        tokenData.decimals,
-        TOKEN_PROGRAM_ID
-    );*/
 
     const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
     const transaction = new Transaction();
@@ -37,7 +25,7 @@ export const createToken = async ({ initialSupply, tokenData, connection, wallet
 
     // create mint
 
-    const { tokenIx, tokenMint } = await generateTokenMintInstructions(connection, wallet, wallet.publicKey, wallet.publicKey, 8)
+    const { tokenIx, tokenMint } = await generateTokenMintInstructions(connection, wallet, wallet.publicKey, wallet.publicKey, tokenData.decimals)
 
     // create associated account to receive tokens
 

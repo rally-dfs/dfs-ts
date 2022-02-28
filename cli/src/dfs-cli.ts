@@ -92,7 +92,7 @@ program
         // wait for tx confirmation
         await connection.confirmTransaction(tx)
 
-        console.log(`${name} created, token mint = ${tokenMint.publicKey}, associated token account = ${tokenAccount}`)
+        console.log(`${name} created, token mint = ${tokenMint}, associated token account = ${tokenAccount}`)
     });
 
 
@@ -279,7 +279,8 @@ program
             sourceTokenAccount: canonicalTokenAccount,
             destinationTokenAccount: wormholeTokenAccount,
             destinationAmount: destAmount,
-            wallet
+            wallet,
+            connection
         })
 
         console.log(tx)
@@ -356,7 +357,8 @@ program
             sourceTokenAccount: wormholeTokenAccount,
             destinationTokenAccount: canonicalTokenAccount,
             destinationAmount: destAmount,
-            wallet
+            wallet,
+            connection
         })
 
         console.log(tx)
@@ -422,7 +424,7 @@ program
 
         const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
 
-        const { destinationAccount } = await initializeLinearPriceCurve({
+        const { tx, destinationAccount } = await initializeLinearPriceCurve({
             tokenSwap,
             slopeNumerator,
             slopeDenominator,
@@ -430,14 +432,16 @@ program
             initialTokenAPriceDenominator,
             callerTokenBAccount,
             tokenSwapInfo,
-            tokenA,
-            tokenB,
+            tokenA: tokenA.publicKey,
+            tokenB: tokenB.publicKey,
             wallet,
-            provider,
+            connection,
             initialTokenBLiquidity
         })
 
-        const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId, payer);
+        await connection.confirmTransaction(tx)
+
+        const data = await getTokenSwapInfo(provider, tokenSwapInfo.publicKey, tokenSwap.programId);
         const poolToken = new Token(connection, new PublicKey(data.poolToken), TOKEN_PROGRAM_ID, payer)
         const feeAccount = data.feeAccount;
         const tokenATokenAccount = data.tokenAccountA;
@@ -450,7 +454,7 @@ program
         console.log('swap token account B', tokenBTokenAccount.toBase58());
         console.log('pool token public key', poolToken.publicKey.toBase58());
         console.log('fee account public key', feeAccount.toBase58());
-        console.log('initial pool token deposit token account', destinationAccount.toBase58());
+        console.log('initial pool token deposit token account', destinationAccount.publicKey.toBase58());
 
     });
 
@@ -495,7 +499,7 @@ program
                 tokenSwap.programId
             );
 
-        const swapData = await getTokenSwapInfo(provider, tokenSwapInfo, tokenSwap.programId, payer);
+        const swapData = await getTokenSwapInfo(provider, tokenSwapInfo, tokenSwap.programId);
 
         const callerTokenAAccount = await getOrCreateAssociatedAccount(tokenA, payer.publicKey);
         const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
@@ -561,12 +565,12 @@ program
                 tokenSwap.programId
             );
 
-        const swapData = await getTokenSwapInfo(provider, tokenSwapInfo, tokenSwap.programId, payer);
+        const swapData = await getTokenSwapInfo(provider, tokenSwapInfo, tokenSwap.programId);
 
         const callerTokenAAccount = await getOrCreateAssociatedAccount(tokenA, payer.publicKey);
         const callerTokenBAccount = await getOrCreateAssociatedAccount(tokenB, payer.publicKey);
 
-        await executeSwap({
+        const tx = await executeSwap({
             tokenSwap,
             tokenSwapInfo,
             amountIn: tokenAAmount,
@@ -578,8 +582,11 @@ program
             swapDestinationTokenAccount: swapData.tokenAccountB,
             poolMintAccount: swapData.poolToken,
             poolFeeAccount: swapData.feeAccount,
-            wallet
+            wallet,
+            connection
         })
+
+        await connection.confirmTransaction(tx)
 
         console.log('swap executed successfully');
     });

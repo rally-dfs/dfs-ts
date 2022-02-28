@@ -15,6 +15,7 @@
     "@solana/wallet-adapter-react": "^0.15.3",
     "@solana/wallet-adapter-react-ui": "^0.9.5",
     "@solana/wallet-adapter-wallets": "^0.15.4",
+    "@solana/web3.js": "^1.35.1",
     "bn.js": "^5.2.0",
     "dfs-js": "^1.0.6",
     "next": "12.0.10",
