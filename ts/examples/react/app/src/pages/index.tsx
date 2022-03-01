@@ -4,8 +4,8 @@ import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 
 import CreateToken from '../components/CreateToken'
-import { Button } from '@mui/material';
-
+import InitTbc from '../components/InitTbc';
+import ExecuteTbcSwap from '../components/executeTbcSwap';
 
 
 const Home: NextPage = () => {
@@ -28,6 +28,8 @@ const Home: NextPage = () => {
           <WalletMultiButton />
         </div>
         <CreateToken />
+        <InitTbc />
+        <ExecuteTbcSwap />
       </main>
     </div>
   )

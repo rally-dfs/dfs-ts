@@ -1,6 +1,6 @@
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Program, web3, BN, Provider } from '@project-serum/anchor';
-import { NodeWallet } from '@metaplex/js';
+import { Wallet } from '@metaplex/js';
 
 const { PublicKey, SystemProgram: { programId }, Transaction } = web3;
 
@@ -16,7 +16,7 @@ interface executeSwapParams {
     swapDestinationTokenAccount: web3.PublicKey;
     poolMintAccount: web3.PublicKey;
     poolFeeAccount: web3.PublicKey;
-    wallet: NodeWallet;
+    wallet: Wallet;
     connection: web3.Connection
 }
 

@@ -4,7 +4,7 @@ import { Wallet } from '@metaplex/js';
 import { accountInfoFromSim, simulateTransaction } from '../..';
 
 
-const { PublicKey, SystemProgram: { programId }, Transaction } = web3;
+const { PublicKey, Transaction } = web3;
 
 
 interface estimateSwapParams {
@@ -40,7 +40,6 @@ export const estimateSwap = async ({
 
 } = {} as estimateSwapParams) => {
 
-    const provider = new Provider(connection, wallet, { commitment: "confirmed", preflightCommitment: "processed" });
     // get exepcted swap authority PDA
 
     const [expectedSwapAuthorityPDA] =
@@ -75,7 +74,6 @@ export const estimateSwap = async ({
     //simulate transaction return simulated state change for userSourceTokenAccount and userDestinationTokenAccount
 
     const { value: { accounts } } = await simulateTransaction(tx, wallet, connection, { commitment: "confirmed", preflightCommitment: "processed" }, [userSourceTokenAccount, userDestinationTokenAccount]);
-
 
     const accountAInfo = await accountInfoFromSim(accounts[0])
     const accountBInfo = await accountInfoFromSim(accounts[1])

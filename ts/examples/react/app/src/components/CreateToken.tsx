@@ -9,29 +9,37 @@ import { PublicKey } from '@solana/web3.js';
 import { EXPLORER_ROOT, NETWORK } from "../config";
 
 const CreateToken: FC = () => {
-    const { connection } = useConnection();
 
+    const { connection } = useConnection();
     const wallet = useWallet() as Wallet;
 
 
-    const defaultValues = {
-        tokenName: "",
-        tokenSymbol: "",
-        tokenDecimals: 0,
-        initialSupply: 0
-    };
+    type createTokenValues = {
+        tokenName: string,
+        tokenSymbol: string,
+        tokenDecimals: number,
+        initialSupply: number
+    }
 
-    type defaultTokenValuesType = {
+    type createTokenReturn = {
         tx: string | null,
         tokenMint: PublicKey | null,
         tokenAccount: PublicKey | null
     }
 
-    const defaultTokenValues = {} as defaultTokenValuesType;
+    const defaultTokenValues = {
+        tokenName: "",
+        tokenSymbol: "",
+        tokenDecimals: 0,
+        initialSupply: 0
+    } as createTokenValues;
 
 
-    const [formValues, setFormValues] = useState(defaultValues)
-    const [tokenValues, setTokenValues] = useState(defaultTokenValues)
+    const defaultReturnValues = {} as createTokenReturn;
+
+
+    const [formValues, setFormValues] = useState(defaultTokenValues)
+    const [tokenReturnValues, setTokenReturnValues] = useState(defaultReturnValues)
 
     const handleInputChange = (e: any) => {
         const { name, value } = e.target;
@@ -69,7 +77,7 @@ const CreateToken: FC = () => {
                 wallet
             })
 
-            setTokenValues(result);
+            setTokenReturnValues(result);
             console.log(result)
 
         }
@@ -77,77 +85,80 @@ const CreateToken: FC = () => {
 
 
     return (
-        <form onSubmit={handleSubmit}>
-            <Typography variant="h6" gutterBottom>
-                Create Token
-            </Typography>
+        <>
+            <form onSubmit={handleSubmit}>
+                <Typography variant="h6" gutterBottom>
+                    Create Token
+                </Typography>
 
-            <Grid container spacing={3} maxWidth="sm">
+                <Grid container spacing={3} maxWidth="sm">
 
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        required
-                        id="tokenName"
-                        name="tokenName"
-                        label="Toke Name"
-                        value={formValues.tokenName}
-                        onChange={handleInputChange}
-                        fullWidth
-                        variant="standard"
-                    />
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            required
+                            id="tokenName"
+                            name="tokenName"
+                            label="Toke Name"
+                            value={formValues.tokenName}
+                            onChange={handleInputChange}
+                            fullWidth
+                            variant="standard"
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            required
+                            id="tokenSymbol"
+                            name="tokenSymbol"
+                            label="Toke Symbol"
+                            fullWidth
+                            variant="standard"
+                            value={formValues.tokenSymbol}
+                            onChange={handleInputChange}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            required
+                            id="tokenDecimals"
+                            name="tokenDecimals"
+                            label="Token Decimals"
+                            fullWidth
+                            variant="standard"
+                            value={formValues.tokenDecimals}
+                            onChange={handleInputChange}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            required
+                            id="initialSupply"
+                            name="initialSupply"
+                            label="Initial Supply"
+                            fullWidth
+                            variant="standard"
+                            value={formValues.initialSupply}
+                            onChange={handleInputChange}
+                        />
+                    </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        required
-                        id="tokenSymbol"
-                        name="tokenSymbol"
-                        label="Toke Symbol"
-                        fullWidth
-                        variant="standard"
-                        value={formValues.tokenSymbol}
-                        onChange={handleInputChange}
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        required
-                        id="tokenDecimals"
-                        name="tokenDecimals"
-                        label="Token Decimals"
-                        fullWidth
-                        variant="standard"
-                        value={formValues.tokenDecimals}
-                        onChange={handleInputChange}
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        required
-                        id="initialSupply"
-                        name="initialSupply"
-                        label="Initial Supply"
-                        fullWidth
-                        variant="standard"
-                        value={formValues.initialSupply}
-                        onChange={handleInputChange}
-                    />
-                </Grid>
-            </Grid>
-            <Button variant="contained" color="primary" type="submit">
-                Submit
-            </Button>
-            {tokenValues.tx != null && (
-                <>
-                    <p>{`token successfully created`}</p>
-                    <p>tx id =<a href={`${EXPLORER_ROOT}/tx/${tokenValues.tx}?cluster=${NETWORK}`} target="_blank">{`${tokenValues.tx}`}</a></p>
-                    <p>token mint = <a href={`${EXPLORER_ROOT}/address/${tokenValues.tokenMint}?cluster=${NETWORK}`} target="_blank">{`${tokenValues.tokenMint}`}</a></p>
-                </>
+                <Button variant="contained" color="primary" type="submit">
+                    Submit
+                </Button>
+            </form >
+            {
+                tokenReturnValues.tx != null && (
+                    <Grid container spacing={3} maxWidth="sm">
+                        <p>{`token successfully created`}</p>
+                        <p>tx id =<a href={`${EXPLORER_ROOT}/tx/${tokenReturnValues.tx}?cluster=${NETWORK}`} target="_blank">{`${tokenReturnValues.tx}`}</a></p>
+                        <p>token mint = <a href={`${EXPLORER_ROOT}/address/${tokenReturnValues.tokenMint}?cluster=${NETWORK}`} target="_blank">{`${tokenReturnValues.tokenMint}`}</a></p>
+                    </Grid>
 
-            )
+                )
             }
+        </>
 
 
-        </form>
 
     );
 

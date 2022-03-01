@@ -1,5 +1,5 @@
 import { config } from "../../config"
-import { Program, web3, BN } from '@project-serum/anchor';
+import { web3, BN } from '@project-serum/anchor';
 import * as BufferLayout from "@solana/buffer-layout";
 import { u64, AccountLayout, TOKEN_PROGRAM_ID, MintLayout, Token } from "@solana/spl-token";
 const { PublicKey, SystemProgram, Keypair } = web3;
@@ -14,6 +14,8 @@ export const getOrCreateAssociatedAccount = async (token, pubKey) => {
     return accountInfo.address;
 
 }
+
+
 
 export const createSwapInfoAccount = async (provider, fromPubkey, programId) => {
     // Generate new keypair
@@ -110,6 +112,17 @@ export const accountInfoFromSim = async (account) => {
 
     let data = account.data;
     data = Buffer.from(data[0], data[1]);
+    const accountInfo = AccountLayout.decode(data);
+    accountInfo.mint = new PublicKey(accountInfo.mint);
+    accountInfo.owner = new PublicKey(accountInfo.owner);
+    accountInfo.amount = u64.fromBuffer(accountInfo.amount);
+    return accountInfo;
+
+}
+
+export const getTokenAccountInfo = async (connection, address) => {
+
+    const { data } = await connection.getAccountInfo(address);
     const accountInfo = AccountLayout.decode(data);
     accountInfo.mint = new PublicKey(accountInfo.mint);
     accountInfo.owner = new PublicKey(accountInfo.owner);
@@ -252,7 +265,7 @@ export const simulateTransaction = async (tx, wallet, connection, opts, includeA
         )
     ).blockhash;
 
-    await wallet.signTransaction(tx);
+    //await wallet.signTransaction(tx);
 
     // @ts-ignore
     tx.recentBlockhash = await connection._recentBlockhash(
