@@ -7,6 +7,8 @@ const { PublicKey, SystemProgram, Keypair } = web3;
 
 const { accountLayout: { SWAP_ACCOUNT_SPACE } } = config;
 
+export const sRLY_PUBKEY = new PublicKey('RLYv2ubRMDLcGG2UyvPmnPmkfuQTsMbg4Jtygc7dmnq');
+
 
 export const getOrCreateAssociatedAccount = async (token, pubKey) => {
 
@@ -14,7 +16,6 @@ export const getOrCreateAssociatedAccount = async (token, pubKey) => {
     return accountInfo.address;
 
 }
-
 
 
 export const createSwapInfoAccount = async (provider, fromPubkey, programId) => {

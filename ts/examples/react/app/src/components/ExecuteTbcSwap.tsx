@@ -1,7 +1,7 @@
 
 import { FC, useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { Button, Grid, TextField, Typography } from '@mui/material';
+import { Button, Grid, TextField, Typography, Box, Stack, Link } from '@mui/material';
 import BN from 'bn.js';
 import { executeSwap, estimateSwap, tokenSwapProgram, getTokenSwapInfo, getMintInfo, getTokenAccountInfo } from "../../../../../build/src/index"
 import { Wallet } from '@metaplex/js';
@@ -147,7 +147,7 @@ const ExecuteTbcSwap: FC = () => {
             const { amountB } = await estimateSwapValues()
             setEstimateOut(amountB.toNumber())
         }
-        if (wallet.publicKey) {
+        if (wallet.publicKey && formValues.amountIn > 0) {
             estimate()
         }
     }, [formValues.amountIn]);
@@ -209,89 +209,88 @@ const ExecuteTbcSwap: FC = () => {
 
 
     return (
-        <>
-            <form onSubmit={handleSubmit}>
-                <Typography variant="h6" gutterBottom>
-                    Execute Swap
-                </Typography>
+        <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 6 }}>
 
-                <Grid container spacing={3} maxWidth="sm">
+            <Typography variant="h6" gutterBottom>
+                Execute Swap
+            </Typography>
 
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="tokenSwapInfo"
-                            name="tokenSwapInfo"
-                            label="Swap Id"
-                            value={formValues.tokenSwapInfo}
-                            onChange={handleInputChange}
-                            fullWidth
-                            variant="standard"
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="tokenA"
-                            name="tokenA"
-                            label="token A"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.tokenA}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="tokenB"
-                            name="tokenB"
-                            label="Token B"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.tokenB}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
+            <Grid container spacing={3} maxWidth="sm">
 
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="amountIn"
-                            name="amountIn"
-                            label="Amount In"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.amountIn}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="amountOut"
-                            name="amountOut"
-                            label="Amount Out"
-                            fullWidth
-                            variant="standard"
-                            value={estimateOut}
-                        />
-                    </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="tokenSwapInfo"
+                        name="tokenSwapInfo"
+                        label="Swap Id"
+                        value={formValues.tokenSwapInfo}
+                        onChange={handleInputChange}
+                        fullWidth
+                        variant="standard"
+                    />
                 </Grid>
-                <Button variant="contained" color="primary" type="submit">
-                    Submit
-                </Button>
-            </form>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="tokenA"
+                        name="tokenA"
+                        label="token A"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.tokenA}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="tokenB"
+                        name="tokenB"
+                        label="Token B"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.tokenB}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="amountIn"
+                        name="amountIn"
+                        label="Amount In"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.amountIn}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="amountOut"
+                        name="amountOut"
+                        label="Amount Out"
+                        fullWidth
+                        variant="standard"
+                        value={estimateOut}
+                    />
+                </Grid>
+            </Grid>
+            <Button variant="contained" color="primary" type="submit" sx={{ mt: 3, mb: 2 }}>
+                Swap
+            </Button>
             {
                 swapResponseValues.tx != null && (
-                    <Grid container spacing={3} maxWidth="sm">
-                        <p>{`token successfully created`}</p>
-                        <p>tx id =<a href={`${EXPLORER_ROOT}/tx/${swapResponseValues.tx}?cluster=${NETWORK}`} target="_blank">{`${swapResponseValues.tx}`}</a></p>
-                    </Grid>
+                    <Stack spacing={1}>
+                        <Typography variant="body1" color="text.secondary">{`swap successfully executed!`}</Typography>
+                        <Typography variant="body1" color="text.secondary">tx id =<Link href={`${EXPLORER_ROOT}/tx/${swapResponseValues.tx}?cluster=${NETWORK}`} target="_blank">{`${swapResponseValues.tx}`}</Link></Typography>
+                    </Stack>
 
                 )
             }
-        </>
+        </Box >
 
     );
 

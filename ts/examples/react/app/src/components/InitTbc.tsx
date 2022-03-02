@@ -1,7 +1,7 @@
 
 import { FC, useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { Button, Grid, TextField, Typography } from '@mui/material';
+import { Button, Grid, TextField, Typography, Box, Stack, Link } from '@mui/material';
 import BN from 'bn.js';
 import { initializeLinearPriceCurve, tokenSwapProgram, getMintInfo } from "../../../../../build/src/index"
 import { Wallet } from '@metaplex/js';
@@ -75,7 +75,6 @@ const InitTbc: FC = () => {
                 tokenB
             } = formValues;
 
-            //convert init supply to decimal units
 
             tokenSwapInfo = Keypair.generate();
             setFormValues({
@@ -111,114 +110,113 @@ const InitTbc: FC = () => {
 
 
     return (
-        <>
-            <form onSubmit={handleSubmit}>
-                <Typography variant="h6" gutterBottom>
-                    Initialize Token Bonding Curve
-                </Typography>
+        <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 6 }}>
 
-                <Grid container spacing={3} maxWidth="sm">
+            <Typography variant="h6" gutterBottom>
+                Initialize Token Bonding Curve
+            </Typography>
 
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="tokenA"
-                            name="tokenA"
-                            label="Token A"
-                            value={formValues.tokenA}
-                            onChange={handleInputChange}
-                            fullWidth
-                            variant="standard"
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="tokenB"
-                            name="tokenB"
-                            label="Token B"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.tokenB}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="slopeNumerator"
-                            name="slopeNumerator"
-                            label="Slope Numerator"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.slopeNumerator}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="slopeDenominiator"
-                            name="slopeDenominator"
-                            label="Slope Denominator"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.slopeDenominator}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="initialTokenAPriceNumerator"
-                            name="initialTokenAPriceNumerator"
-                            label="Initial Token A Price Numerator"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.initialTokenAPriceNumerator}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="initialTokenAPriceDenominator"
-                            name="initialTokenAPriceDenominator"
-                            label="Initial Token A Price Denominator"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.initialTokenAPriceDenominator}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="initialTokenBLiquidity"
-                            name="initialTokenBLiquidity"
-                            label="Initial Token B Liquidity"
-                            fullWidth
-                            variant="standard"
-                            value={formValues.initialTokenBLiquidity}
-                            onChange={handleInputChange}
-                        />
-                    </Grid>
+            <Grid container spacing={3} maxWidth="sm">
+
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="tokenA"
+                        name="tokenA"
+                        label="Token A"
+                        value={formValues.tokenA}
+                        onChange={handleInputChange}
+                        fullWidth
+                        variant="standard"
+                    />
                 </Grid>
-                <Button variant="contained" color="primary" type="submit">
-                    Submit
-                </Button>
-            </form>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="tokenB"
+                        name="tokenB"
+                        label="Token B"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.tokenB}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="slopeNumerator"
+                        name="slopeNumerator"
+                        label="Slope Numerator"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.slopeNumerator}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="slopeDenominiator"
+                        name="slopeDenominator"
+                        label="Slope Denominator"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.slopeDenominator}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="initialTokenAPriceNumerator"
+                        name="initialTokenAPriceNumerator"
+                        label="Initial Token A Price Numerator"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.initialTokenAPriceNumerator}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="initialTokenAPriceDenominator"
+                        name="initialTokenAPriceDenominator"
+                        label="Initial Token A Price Denominator"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.initialTokenAPriceDenominator}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        required
+                        id="initialTokenBLiquidity"
+                        name="initialTokenBLiquidity"
+                        label="Initial Token B Liquidity"
+                        fullWidth
+                        variant="standard"
+                        value={formValues.initialTokenBLiquidity}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+            </Grid>
+            <Button variant="contained" color="primary" type="submit" sx={{ mt: 3, mb: 2 }}>
+                Submit
+            </Button>
             {
                 tbcResponseValues.tx != null && (
-                    <Grid container spacing={3} maxWidth="sm">
-                        <p>{`token successfully created`}</p>
-                        <p>tx id =<a href={`${EXPLORER_ROOT}/tx/${tbcResponseValues.tx}?cluster=${NETWORK}`} target="_blank">{`${tbcResponseValues.tx}`}</a></p>
-                        <p>swap id = <a href={`${EXPLORER_ROOT}/address/${formValues.tokenSwapInfo}?cluster=${NETWORK}`} target="_blank">{`${formValues.tokenSwapInfo}`}</a></p>
-                    </Grid>
+                    <Stack spacing={1}>
+                        <Typography variant="body1" color="text.secondary">{`swap successfully initialized`}</Typography>
+                        <Typography variant="body1" color="text.secondary" >tx id =<Link href={`${EXPLORER_ROOT}/tx/${tbcResponseValues.tx}?cluster=${NETWORK}`} target="_blank">{`${tbcResponseValues.tx}`}</Link></Typography>
+                        <Typography variant="body1" color="text.secondary">tbc id = <Link href={`${EXPLORER_ROOT}/address/${formValues.tokenSwapInfo}?cluster=${NETWORK}`} target="_blank">{`${formValues.tokenSwapInfo}`}</Link></Typography>
+                    </Stack>
 
                 )
             }
-        </>
+        </Box >
 
     );
 
