@@ -1,9 +1,9 @@
 import * as React from 'react';
 import type { NextPage } from 'next'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
-import { AppBar, Toolbar, Typography, Link, Button, GlobalStyles, CssBaseline, Container } from '@mui/material';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { AppBar, Toolbar, Typography, Divider, GlobalStyles, CssBaseline, Container, Alert } from '@mui/material';
+import { indexCopy } from '../config'
 
 import CreateToken from '../components/CreateToken'
 import InitTbc from '../components/InitTbc';
@@ -11,6 +11,9 @@ import ExecuteTbcSwap from '../components/ExecuteTbcSwap';
 
 
 const Home: NextPage = () => {
+
+  const wallet = useWallet() as Wallet;
+
   return (
     <React.Fragment>
 
@@ -31,17 +34,28 @@ const Home: NextPage = () => {
       </AppBar>
 
       <Container disableGutters maxWidth="sm" component="main" sx={{ pt: 8, pb: 6 }}>
-        <Typography variant="h5" align="center" color="text.secondary" component="p">
-          Below are examples of react components that execute core functionality on the RLY Network Solana programs. Create two tokens, initialize a bonding curve and swap the tokens.
+        <Typography variant="h5" align="left" color="text.secondary" component="h1" sx={{ pt: 2, pb: 2 }}>
+          {indexCopy.title}
+        </Typography>
+        <Typography variant="body1" align="left" color="text.secondary" component="p">
+          {indexCopy.headline}
         </Typography>
       </Container>
-      <Container disableGutters maxWidth="sm" component="main" sx={{ pt: 8, pb: 6 }}>
+      <Divider />
+      {!wallet.publicKey &&
+        <Container maxWidth="sm" style={{ paddingLeft: 0, paddingRight: 0 }}>
+          <Alert severity="error">
+            please connect wallet
+          </Alert>
+        </Container>
+      }
+      <Container disableGutters maxWidth="sm" component="main" sx={{ pt: 2, pb: 2 }}>
         <CreateToken />
       </Container >
-      <Container disableGutters maxWidth="sm" component="main" sx={{ pt: 8, pb: 6 }}>
+      <Container disableGutters maxWidth="sm" component="main" sx={{ pt: 2, pb: 2 }}>
         <InitTbc />
       </Container>
-      <Container disableGutters maxWidth="sm" component="main" sx={{ pt: 8, pb: 6 }}>
+      <Container disableGutters maxWidth="sm" component="main" sx={{ pt: 2, pb: 2, mb: 4 }}>
         <ExecuteTbcSwap />
       </Container>
     </React.Fragment>

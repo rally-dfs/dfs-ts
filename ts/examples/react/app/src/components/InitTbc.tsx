@@ -110,32 +110,35 @@ const InitTbc: FC = () => {
 
 
     return (
-        <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 6 }}>
+        <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 4 }}>
 
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6">
                 Initialize Token Bonding Curve
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
+                *Requires two tokens, make sure that you created two tokens above
             </Typography>
 
             <Grid container spacing={3} maxWidth="sm">
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={12}>
                     <TextField
                         required
                         id="tokenA"
                         name="tokenA"
-                        label="Token A"
+                        label="Token A Mint"
                         value={formValues.tokenA}
                         onChange={handleInputChange}
                         fullWidth
                         variant="standard"
                     />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={12}>
                     <TextField
                         required
                         id="tokenB"
                         name="tokenB"
-                        label="Token B"
+                        label="Token B Mint"
                         fullWidth
                         variant="standard"
                         value={formValues.tokenB}
@@ -204,14 +207,13 @@ const InitTbc: FC = () => {
                 </Grid>
             </Grid>
             <Button variant="contained" color="primary" type="submit" sx={{ mt: 3, mb: 2 }}>
-                Submit
+                Initialize Token Bonding Curve
             </Button>
             {
                 tbcResponseValues.tx != null && (
                     <Stack spacing={1}>
-                        <Typography variant="body1" color="text.secondary">{`swap successfully initialized`}</Typography>
-                        <Typography variant="body1" color="text.secondary" >tx id =<Link href={`${EXPLORER_ROOT}/tx/${tbcResponseValues.tx}?cluster=${NETWORK}`} target="_blank">{`${tbcResponseValues.tx}`}</Link></Typography>
-                        <Typography variant="body1" color="text.secondary">tbc id = <Link href={`${EXPLORER_ROOT}/address/${formValues.tokenSwapInfo}?cluster=${NETWORK}`} target="_blank">{`${formValues.tokenSwapInfo}`}</Link></Typography>
+                        <Typography variant="body1" color="text.secondary">{`swap successfully initialized!`}<Link href={`${EXPLORER_ROOT}/tx/${tbcResponseValues.tx}?cluster=${NETWORK}`} target="_blank">{`(view transaction)`}</Link></Typography>
+                        <Typography variant="body1" color="text.secondary">swap id: <Link href={`${EXPLORER_ROOT}/address/${formValues.tokenSwapInfo}?cluster=${NETWORK}`} target="_blank">{`${formValues.tokenSwapInfo}`}</Link></Typography>
                     </Stack>
 
                 )

@@ -91,9 +91,7 @@ const CreateToken: FC = () => {
             <Typography variant="h6" gutterBottom>
                 Create Token
             </Typography>
-
             <Grid container spacing={3} maxWidth="sm">
-
                 <Grid item xs={12} sm={6}>
                     <TextField
                         required
@@ -150,9 +148,9 @@ const CreateToken: FC = () => {
             {
                 tokenReturnValues.tx != null && (
                     <Stack spacing={1}>
-                        <Typography variant="body1" color="text.secondary">{`token successfully created!`}</Typography>
-                        <Typography variant="body1" color="text.secondary">tx id = <Link href={`${EXPLORER_ROOT}/tx/${tokenReturnValues.tx}?cluster=${NETWORK}`} target="_blank">{`${tokenReturnValues.tx}`}</Link></Typography>
-                        <Typography variant="body1" color="text.secondary">token mint = <Link href={`${EXPLORER_ROOT}/address/${tokenReturnValues.tokenMint}?cluster=${NETWORK}`} target="_blank">{`${tokenReturnValues.tokenMint}`}</Link></Typography>
+                        <Typography variant="body1" color="text.secondary">{`token successfully created! `}<Link href={`${EXPLORER_ROOT}/tx/${tokenReturnValues.tx}?cluster=${NETWORK}`} target="_blank">(view transaction)</Link></Typography>
+                        <Typography variant="body1" color="text.secondary"></Typography>
+                        <Typography variant="body1" color="text.secondary">token mint: <Link href={`${EXPLORER_ROOT}/address/${tokenReturnValues.tokenMint}?cluster=${NETWORK}`} target="_blank">{`${tokenReturnValues.tokenMint}`}</Link></Typography>
                     </Stack>
 
                 )

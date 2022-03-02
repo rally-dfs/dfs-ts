@@ -52,6 +52,8 @@ const ExecuteTbcSwap: FC = () => {
             amountOut,
         } = formValues;
 
+
+        console.log(tokenSwapInfo)
         const tokenSwapInfoPubKey = new PublicKey(tokenSwapInfo);
         const tokenAPubKey = new PublicKey(tokenA);
         const tokenBPubKey = new PublicKey(tokenB);
@@ -217,7 +219,7 @@ const ExecuteTbcSwap: FC = () => {
 
             <Grid container spacing={3} maxWidth="sm">
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={12}>
                     <TextField
                         required
                         id="tokenSwapInfo"
@@ -229,7 +231,7 @@ const ExecuteTbcSwap: FC = () => {
                         variant="standard"
                     />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={12}>
                     <TextField
                         required
                         id="tokenA"
@@ -241,7 +243,7 @@ const ExecuteTbcSwap: FC = () => {
                         onChange={handleInputChange}
                     />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={12}>
                     <TextField
                         required
                         id="tokenB"
@@ -284,8 +286,7 @@ const ExecuteTbcSwap: FC = () => {
             {
                 swapResponseValues.tx != null && (
                     <Stack spacing={1}>
-                        <Typography variant="body1" color="text.secondary">{`swap successfully executed!`}</Typography>
-                        <Typography variant="body1" color="text.secondary">tx id =<Link href={`${EXPLORER_ROOT}/tx/${swapResponseValues.tx}?cluster=${NETWORK}`} target="_blank">{`${swapResponseValues.tx}`}</Link></Typography>
+                        <Typography variant="body1" color="text.secondary">{`swap successfully executed!`}<Link href={`${EXPLORER_ROOT}/tx/${swapResponseValues.tx}?cluster=${NETWORK}`} target="_blank"> (view transaction)</Link></Typography>
                     </Stack>
 
                 )
