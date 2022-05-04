@@ -1,6 +1,3 @@
-
-# DFS TS
-
-see readme files in individual packages
+For ongoing development of our typescript library and CLI visit https://github.com/rally-dfs/rly-ts
 
 
